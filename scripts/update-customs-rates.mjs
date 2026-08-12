@@ -5,6 +5,8 @@ import path from 'node:path';
 const API_URL = 'https://apis.data.go.kr/1220000/retrieveTrifFxrtInfo/getRetrieveTrifFxrtInfo';
 const SOURCE_URL = 'https://www.data.go.kr/data/15101230/openapi.do';
 const SUPPORTED_CURRENCIES = ['USD', 'EUR', 'CHF', 'HKD', 'GBP', 'CNY', 'JPY', 'AUD'];
+const REQUEST_ATTEMPTS = 4;
+const REQUEST_TIMEOUT_MS = 30000;
 const serviceKey = process.env.DATA_GO_KR_SERVICE_KEY;
 
 if (!serviceKey) {
@@ -72,6 +74,32 @@ function normalizeJsonItems(data) {
   }));
 }
 
+function wait(milliseconds) {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
+}
+
+async function fetchWithRetry(url) {
+  let lastError;
+
+  for (let attempt = 1; attempt <= REQUEST_ATTEMPTS; attempt += 1) {
+    try {
+      const response = await fetch(url, { signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) });
+      if (response.ok || response.status < 500) return response;
+      lastError = new Error(`Customs API request failed: ${response.status}`);
+    } catch (error) {
+      lastError = error;
+    }
+
+    if (attempt < REQUEST_ATTEMPTS) {
+      const delay = 2000 * (2 ** (attempt - 1));
+      console.warn(`Customs API attempt ${attempt} failed; retrying in ${delay / 1000}s`);
+      await wait(delay);
+    }
+  }
+
+  throw lastError;
+}
+
 async function fetchRates(weekStart) {
   const decodedServiceKey = serviceKey.includes('%') ? decodeURIComponent(serviceKey) : serviceKey;
   const params = new URLSearchParams({
@@ -81,7 +109,7 @@ async function fetchRates(weekStart) {
     pageNo: '1',
     numOfRows: '100'
   });
-  const response = await fetch(`${API_URL}?${params}`);
+  const response = await fetchWithRetry(`${API_URL}?${params}`);
   if (!response.ok) {
     throw new Error(`Customs API request failed: ${response.status}`);
   }
