@@ -1,0 +1,1613 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <title>시가 직구 세금 계산기</title>
+  <style>
+    @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css");
+
+    :root {
+      color-scheme: light;
+      font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Noto Sans KR", sans-serif;
+      font-synthesis: none;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      min-width: 320px;
+      min-height: 100vh;
+      margin: 0;
+      padding: 18px 14px 48px;
+      background: #f3f5f4;
+      color: #18211f;
+      letter-spacing: 0;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    .sample-picker {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      display: grid;
+      width: min(100%, 720px);
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      margin: 0 auto 18px;
+      border-bottom: 1px solid #cfd7d4;
+      background: rgba(243, 245, 244, 0.96);
+      backdrop-filter: blur(12px);
+    }
+
+    .sample-tab {
+      min-width: 0;
+      padding: 11px 6px 10px;
+      border: 0;
+      border-bottom: 3px solid transparent;
+      background: transparent;
+      color: #71807b;
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 1.25;
+    }
+
+    .sample-tab[aria-selected="true"] {
+      border-bottom-color: #23675e;
+      color: #17211f;
+    }
+
+    .calculator {
+      --primary: #23675e;
+      --primary-strong: #194f48;
+      --accent: #e9f2ee;
+      --canvas: #f3f5f4;
+      --surface: #ffffff;
+      --field: #ffffff;
+      --text: #18211f;
+      --subtext: #65736f;
+      --line: #d1dad6;
+      --soft-line: #e6ece9;
+      --result-bg: #ffffff;
+      --result-text: #18211f;
+      --focus: rgba(35, 103, 94, 0.2);
+      width: min(100%, 430px);
+      margin: 0 auto;
+      color: var(--text);
+    }
+
+    .app-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .brand-title {
+      margin: 0;
+      color: var(--text);
+      font-size: 24px;
+      font-weight: 760;
+      line-height: 1.2;
+    }
+
+    .brand-copy {
+      margin: 5px 0 0;
+      color: var(--subtext);
+      font-size: 13px;
+      font-weight: 500;
+      line-height: 1.35;
+    }
+
+    .currency-control {
+      position: relative;
+      flex: 0 0 auto;
+    }
+
+    .currency-trigger {
+      display: flex;
+      min-width: 82px;
+      min-height: 42px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 0 11px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--text);
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .currency-trigger:focus-visible,
+    .currency-option:focus-visible,
+    .sample-tab:focus-visible {
+      outline: 3px solid var(--focus);
+      outline-offset: 2px;
+    }
+
+    .currency-arrow {
+      width: 8px;
+      height: 8px;
+      border-right: 2px solid currentColor;
+      border-bottom: 2px solid currentColor;
+      transform: translateY(-2px) rotate(45deg);
+    }
+
+    .currency-menu {
+      position: absolute;
+      top: calc(100% + 6px);
+      right: 0;
+      z-index: 60;
+      width: 178px;
+      max-height: 280px;
+      overflow-y: auto;
+      padding: 5px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+      box-shadow: 0 16px 34px rgba(24, 33, 31, 0.15);
+    }
+
+    .currency-menu[hidden] {
+      display: none;
+    }
+
+    .currency-option {
+      display: flex;
+      width: 100%;
+      min-height: 38px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 7px 8px;
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 650;
+      text-align: left;
+    }
+
+    .currency-option small {
+      color: var(--subtext);
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .currency-option:hover,
+    .currency-option[aria-selected="true"] {
+      background: var(--accent);
+      color: var(--primary-strong);
+    }
+
+    .result-section,
+    .input-section,
+    .tax-section {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+    }
+
+    .result-section {
+      position: relative;
+      margin-bottom: 10px;
+      padding: 19px 18px 15px;
+      border-left: 5px solid var(--primary);
+      background: var(--result-bg);
+      color: var(--result-text);
+    }
+
+    .result-head {
+      display: flex;
+      min-height: 20px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .eyebrow,
+    .section-title {
+      margin: 0;
+      font-size: 12px;
+      font-weight: 650;
+      line-height: 1.35;
+    }
+
+    .eyebrow {
+      color: var(--subtext);
+    }
+
+    .rate-note {
+      color: var(--subtext);
+      font-size: 10px;
+      font-weight: 550;
+      white-space: nowrap;
+    }
+
+    .rate-note.warning {
+      color: #9a4d00;
+    }
+
+    .total-value {
+      display: block;
+      min-height: 49px;
+      margin-top: 7px;
+      color: inherit;
+      font-size: 40px;
+      font-weight: 760;
+      line-height: 1.18;
+      word-break: keep-all;
+    }
+
+    .result-lines,
+    .tax-lines {
+      margin-top: 12px;
+    }
+
+    .result-line,
+    .tax-line {
+      display: flex;
+      min-height: 39px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 9px 0;
+      border-bottom: 1px solid var(--soft-line);
+      color: var(--subtext);
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .result-line:last-child,
+    .tax-line:last-child {
+      border-bottom: 0;
+    }
+
+    .result-line strong,
+    .tax-line strong {
+      flex: 0 0 auto;
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 700;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .input-section,
+    .tax-section {
+      margin-bottom: 10px;
+      padding: 14px;
+    }
+
+    .section-title {
+      margin-bottom: 10px;
+      color: var(--text);
+    }
+
+    .section-heading {
+      display: flex;
+      min-height: 16px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .section-heading .section-title {
+      margin-bottom: 0;
+    }
+
+    .threshold-note {
+      color: var(--subtext);
+      font-size: 10px;
+      font-weight: 550;
+      line-height: 1.35;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .mode-control {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      margin-bottom: 13px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .mode-option {
+      position: relative;
+      margin: 0;
+      cursor: pointer;
+    }
+
+    .mode-option input,
+    .switch-input {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .mode-label {
+      display: flex;
+      min-height: 42px;
+      align-items: center;
+      justify-content: center;
+      border-bottom: 3px solid transparent;
+      color: var(--subtext);
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .mode-option input:checked + .mode-label {
+      border-bottom-color: var(--primary);
+      color: var(--primary-strong);
+      font-weight: 700;
+    }
+
+    .mode-option input:focus-visible + .mode-label {
+      outline: 3px solid var(--focus);
+      outline-offset: -3px;
+    }
+
+    .field-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+      gap: 10px;
+    }
+
+    .field-row {
+      min-width: 0;
+    }
+
+    .field-row.wide {
+      grid-column: 1 / -1;
+    }
+
+    .field-label {
+      display: block;
+      min-height: 17px;
+      margin-bottom: 6px;
+      color: var(--subtext);
+      font-size: 11px;
+      font-weight: 600;
+      line-height: 1.35;
+    }
+
+    .field-shell {
+      display: flex;
+      min-height: 48px;
+      align-items: center;
+      gap: 5px;
+      padding: 0 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--field);
+      color: var(--text);
+    }
+
+    .field-shell:focus-within {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--focus);
+    }
+
+    .field-shell input {
+      width: 100%;
+      min-width: 0;
+      padding: 0;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      color: inherit;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .field-shell input::placeholder {
+      color: #929d99;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .field-prefix,
+    .field-suffix {
+      flex: 0 0 auto;
+      color: var(--text);
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .weight-input {
+      appearance: textfield;
+      -moz-appearance: textfield;
+    }
+
+    .weight-input::-webkit-inner-spin-button,
+    .weight-input::-webkit-outer-spin-button {
+      margin: 0;
+      appearance: none;
+      -webkit-appearance: none;
+    }
+
+    .shipping-note {
+      display: none;
+      margin: 5px 0 0;
+      color: var(--subtext);
+      font-size: 10px;
+      font-weight: 500;
+      line-height: 1.35;
+    }
+
+    .shipping-note.show {
+      display: block;
+    }
+
+    .toggle-row {
+      display: flex;
+      min-height: 48px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 12px;
+      padding: 0 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--field);
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .switch-track {
+      display: block;
+      width: 42px;
+      height: 24px;
+      padding: 3px;
+      border-radius: 999px;
+      background: #c8d1ce;
+      transition: background-color 0.18s ease;
+    }
+
+    .switch-knob {
+      display: block;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #ffffff;
+      transition: transform 0.18s ease;
+    }
+
+    .switch-input:checked + .switch-track {
+      background: var(--primary);
+    }
+
+    .switch-input:checked + .switch-track .switch-knob {
+      transform: translateX(18px);
+    }
+
+    .switch-input:focus-visible + .switch-track {
+      outline: 3px solid var(--focus);
+      outline-offset: 2px;
+    }
+
+    /* B: total-first ink header */
+    .calculator[data-design="b"] {
+      --primary: #d0a43d;
+      --primary-strong: #9d741b;
+      --accent: #f5efd9;
+      --canvas: #f5f5f2;
+      --surface: #ffffff;
+      --field: #f7f8f7;
+      --text: #202725;
+      --subtext: #69736f;
+      --line: #d7dcda;
+      --soft-line: #e9ecea;
+      --result-bg: #202725;
+      --result-text: #f8faf9;
+      --focus: rgba(208, 164, 61, 0.24);
+    }
+
+    .calculator[data-design="b"] .app-header {
+      margin-bottom: 0;
+      padding: 16px 17px 9px;
+      border-radius: 8px 8px 0 0;
+      background: #202725;
+    }
+
+    .calculator[data-design="b"] .brand-title,
+    .calculator[data-design="b"] .brand-copy {
+      color: #f8faf9;
+    }
+
+    .calculator[data-design="b"] .brand-copy {
+      color: #b9c2be;
+    }
+
+    .calculator[data-design="b"] .currency-trigger {
+      border-color: #59635f;
+      background: #2b3431;
+      color: #f8faf9;
+    }
+
+    .calculator[data-design="b"] .result-section {
+      margin-bottom: 14px;
+      padding-top: 11px;
+      border: 0;
+      border-left: 0;
+      border-radius: 0 0 8px 8px;
+    }
+
+    .calculator[data-design="b"] .result-section .eyebrow,
+    .calculator[data-design="b"] .result-section .rate-note,
+    .calculator[data-design="b"] .result-section .result-line {
+      color: #b9c2be;
+    }
+
+    .calculator[data-design="b"] .result-section .result-line {
+      border-bottom-color: #39423f;
+    }
+
+    .calculator[data-design="b"] .result-section .result-line strong {
+      color: #f8faf9;
+    }
+
+    .calculator[data-design="b"] .total-value {
+      color: #ffffff;
+    }
+
+    .calculator[data-design="b"] .input-section,
+    .calculator[data-design="b"] .tax-section {
+      border-right: 0;
+      border-left: 0;
+      border-radius: 0;
+      background: transparent;
+    }
+
+    .calculator[data-design="b"] .input-section {
+      border-top: 0;
+    }
+
+    /* C: wide ledger */
+    .calculator[data-design="c"] {
+      --primary: #8b3e49;
+      --primary-strong: #6f2e38;
+      --accent: #f5e9eb;
+      --canvas: #f3f4f6;
+      --surface: #ffffff;
+      --field: #ffffff;
+      --text: #222630;
+      --subtext: #6a6f7a;
+      --line: #d9dce3;
+      --soft-line: #eceef2;
+      --result-bg: #8b3e49;
+      --result-text: #ffffff;
+      --focus: rgba(139, 62, 73, 0.2);
+      width: min(100%, 720px);
+      display: grid;
+      grid-template-columns: minmax(0, 0.88fr) minmax(0, 1.12fr);
+      gap: 10px;
+    }
+
+    .calculator[data-design="c"] .app-header {
+      grid-column: 1 / -1;
+      margin-bottom: 2px;
+      padding-bottom: 11px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .calculator[data-design="c"] .result-section {
+      grid-column: 1;
+      grid-row: 2;
+      align-self: start;
+      margin: 0;
+      border: 0;
+      border-left: 0;
+      background: var(--result-bg);
+    }
+
+    .calculator[data-design="c"] .result-section .eyebrow,
+    .calculator[data-design="c"] .result-section .rate-note,
+    .calculator[data-design="c"] .result-section .result-line {
+      color: #f1dfe2;
+    }
+
+    .calculator[data-design="c"] .result-section .result-line {
+      border-bottom-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .calculator[data-design="c"] .result-section .result-line strong {
+      color: #ffffff;
+    }
+
+    .calculator[data-design="c"] .input-section {
+      grid-column: 2;
+      grid-row: 2;
+      margin: 0;
+    }
+
+    .calculator[data-design="c"] .tax-section {
+      grid-column: 1 / -1;
+      margin: 0;
+    }
+
+    .calculator[data-design="c"] .tax-lines {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0;
+    }
+
+    .calculator[data-design="c"] .tax-line {
+      min-width: 0;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 4px 14px;
+      border-right: 1px solid var(--soft-line);
+      border-bottom: 0;
+    }
+
+    .calculator[data-design="c"] .tax-line:first-child {
+      padding-left: 0;
+    }
+
+    .calculator[data-design="c"] .tax-line:last-child {
+      padding-right: 0;
+      border-right: 0;
+    }
+
+    .calculator[data-design="c"] .tax-line strong {
+      margin-top: 4px;
+      text-align: left;
+    }
+
+    /* D: thermal paper receipt */
+    body[data-design="d"] {
+      background: #e4e6e3;
+    }
+
+    .calculator[data-design="d"] {
+      --primary: #1d2522;
+      --primary-strong: #111714;
+      --accent: #eceee9;
+      --surface: #fffefa;
+      --field: #f3f2eb;
+      --text: #171b19;
+      --subtext: #5f6561;
+      --line: #9ea49f;
+      --soft-line: #c9cdc9;
+      --result-bg: #fffefa;
+      --result-text: #171b19;
+      --focus: rgba(29, 37, 34, 0.18);
+      width: min(100%, 390px);
+      padding-bottom: 18px;
+      border-top: 2px dashed #8e948f;
+      border-bottom: 2px dashed #8e948f;
+      background: var(--surface);
+      box-shadow: 0 18px 34px rgba(30, 37, 34, 0.14);
+    }
+
+    .calculator[data-design="d"] .app-header {
+      margin: 0;
+      padding: 23px 18px 15px;
+      border-bottom: 1px dashed var(--line);
+    }
+
+    .calculator[data-design="d"] .brand-title {
+      font-size: 21px;
+      font-weight: 720;
+    }
+
+    .calculator[data-design="d"] .brand-copy {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 10px;
+    }
+
+    .calculator[data-design="d"] .currency-trigger {
+      min-width: 72px;
+      min-height: 38px;
+      border-style: dashed;
+      background: transparent;
+      box-shadow: none;
+    }
+
+    .calculator[data-design="d"] .result-section,
+    .calculator[data-design="d"] .input-section,
+    .calculator[data-design="d"] .tax-section {
+      margin: 0 18px;
+      padding: 17px 0;
+      border: 0;
+      border-bottom: 1px dashed var(--line);
+      border-radius: 0;
+      background: transparent;
+    }
+
+    .calculator[data-design="d"] .tax-section {
+      border-bottom: 0;
+    }
+
+    .calculator[data-design="d"] .total-value,
+    .calculator[data-design="d"] .result-line strong,
+    .calculator[data-design="d"] .tax-line strong,
+    .calculator[data-design="d"] .field-shell {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .calculator[data-design="d"] .total-value {
+      min-height: 47px;
+      font-size: 37px;
+      font-weight: 800;
+      text-align: right;
+    }
+
+    .calculator[data-design="d"] .result-line,
+    .calculator[data-design="d"] .tax-line {
+      border-bottom-style: dotted;
+    }
+
+    .calculator[data-design="d"] .mode-control {
+      border-top: 1px dashed var(--line);
+      border-bottom-style: dashed;
+    }
+
+    .calculator[data-design="d"] .mode-option input:checked + .mode-label {
+      border-bottom-color: var(--text);
+      color: var(--text);
+    }
+
+    .calculator[data-design="d"] .field-grid {
+      gap: 12px 10px;
+    }
+
+    .calculator[data-design="d"] .field-label {
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .calculator[data-design="d"] .field-shell {
+      min-height: 46px;
+      padding: 0 10px;
+      border: 1px solid #858b86;
+      border-radius: 4px;
+      background: var(--field);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    }
+
+    .calculator[data-design="d"] .field-shell:focus-within {
+      border-color: var(--text);
+      box-shadow: 0 0 0 2px var(--focus);
+    }
+
+    .calculator[data-design="d"] .field-row.wide {
+      margin-top: 2px;
+      padding-top: 11px;
+      border-top: 1px dotted var(--soft-line);
+    }
+
+    .calculator[data-design="d"] .toggle-row {
+      border-style: dashed;
+      border-radius: 0;
+      background: transparent;
+    }
+
+    /* E: card approval slip */
+    body[data-design="e"] {
+      background: #ececeb;
+    }
+
+    .calculator[data-design="e"] {
+      --primary: #a83d36;
+      --primary-strong: #7f2b26;
+      --accent: #f4e9e7;
+      --surface: #ffffff;
+      --field: #ffffff;
+      --text: #222221;
+      --subtext: #666461;
+      --line: #aaa7a2;
+      --soft-line: #d8d5d1;
+      --result-bg: #ffffff;
+      --result-text: #222221;
+      --focus: rgba(168, 61, 54, 0.2);
+      width: min(100%, 400px);
+      border: 1px solid #77746f;
+      background: var(--surface);
+      box-shadow: 0 14px 28px rgba(39, 37, 34, 0.12);
+    }
+
+    .calculator[data-design="e"] .app-header {
+      margin: 0;
+      padding: 15px 16px;
+      background: #242321;
+    }
+
+    .calculator[data-design="e"] .brand-title {
+      color: #ffffff;
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .calculator[data-design="e"] .brand-copy {
+      color: #c9c5bf;
+      font-size: 10px;
+    }
+
+    .calculator[data-design="e"] .currency-trigger {
+      min-width: 72px;
+      min-height: 38px;
+      border-color: #66625d;
+      background: #302f2c;
+      color: #ffffff;
+    }
+
+    .calculator[data-design="e"] .result-section {
+      margin: 16px 16px 0;
+      padding: 14px 0;
+      border: 0;
+      border-top: 4px double var(--text);
+      border-bottom: 4px double var(--text);
+      border-radius: 0;
+    }
+
+    .calculator[data-design="e"] .total-value {
+      min-height: 46px;
+      color: var(--primary-strong);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 38px;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+    }
+
+    .calculator[data-design="e"] .result-line strong,
+    .calculator[data-design="e"] .tax-line strong,
+    .calculator[data-design="e"] .field-shell {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .calculator[data-design="e"] .input-section,
+    .calculator[data-design="e"] .tax-section {
+      margin: 0 16px;
+      padding: 16px 0;
+      border: 0;
+      border-bottom: 1px dotted var(--line);
+      border-radius: 0;
+    }
+
+    .calculator[data-design="e"] .tax-section {
+      border-bottom: 0;
+    }
+
+    .calculator[data-design="e"] .mode-control {
+      border: 1px solid var(--text);
+    }
+
+    .calculator[data-design="e"] .mode-label {
+      border-bottom: 0;
+    }
+
+    .calculator[data-design="e"] .mode-option:first-child .mode-label {
+      border-right: 1px solid var(--text);
+    }
+
+    .calculator[data-design="e"] .mode-option input:checked + .mode-label {
+      border-bottom: 0;
+      background: var(--text);
+      color: #ffffff;
+    }
+
+    .calculator[data-design="e"] .field-shell {
+      border-style: dashed;
+      border-radius: 0;
+    }
+
+    .calculator[data-design="e"] .toggle-row {
+      border-style: dashed;
+      border-radius: 0;
+    }
+
+    @media (max-width: 620px) {
+      .calculator[data-design="c"] {
+        width: min(100%, 430px);
+        display: block;
+      }
+
+      .calculator[data-design="c"] .app-header {
+        margin-bottom: 12px;
+      }
+
+      .calculator[data-design="c"] .result-section,
+      .calculator[data-design="c"] .input-section,
+      .calculator[data-design="c"] .tax-section {
+        margin-bottom: 10px;
+      }
+
+      .calculator[data-design="c"] .tax-lines {
+        display: block;
+      }
+
+      .calculator[data-design="c"] .tax-line {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        padding: 9px 0;
+        border-right: 0;
+        border-bottom: 1px solid var(--soft-line);
+      }
+
+      .calculator[data-design="c"] .tax-line:last-child {
+        border-bottom: 0;
+      }
+
+      .calculator[data-design="c"] .tax-line strong {
+        margin-top: 0;
+        text-align: right;
+      }
+    }
+
+    @media (max-width: 380px) {
+      body {
+        padding-right: 10px;
+        padding-left: 10px;
+      }
+
+      .brand-title {
+        font-size: 21px;
+      }
+
+      .brand-copy {
+        font-size: 12px;
+      }
+
+      .currency-trigger {
+        min-width: 75px;
+      }
+
+      .total-value {
+        font-size: 36px;
+      }
+
+      .field-grid {
+        grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
+        gap: 8px;
+      }
+
+      .field-shell {
+        padding: 0 10px;
+      }
+    }
+
+    @media (prefers-color-scheme: dark) {
+      body {
+        background: #101412;
+        color: #edf2ef;
+      }
+
+      .sample-picker {
+        border-bottom-color: #34413d;
+        background: rgba(16, 20, 18, 0.96);
+      }
+
+      .sample-tab {
+        color: #8f9d98;
+      }
+
+      .sample-tab[aria-selected="true"] {
+        border-bottom-color: #65c6b6;
+        color: #edf2ef;
+      }
+
+      .calculator {
+        --primary: #65c6b6;
+        --primary-strong: #9bdfd3;
+        --accent: #19312c;
+        --surface: #161d1a;
+        --field: #111714;
+        --text: #edf2ef;
+        --subtext: #9ba9a4;
+        --line: #34413d;
+        --soft-line: #29332f;
+        --result-bg: #161d1a;
+        --result-text: #edf2ef;
+        --focus: rgba(101, 198, 182, 0.22);
+      }
+
+      .currency-menu {
+        box-shadow: 0 18px 38px rgba(0, 0, 0, 0.4);
+      }
+
+      .field-shell input::placeholder {
+        color: #71807a;
+      }
+
+      .rate-note.warning {
+        color: #f2c96d;
+      }
+
+      .switch-track {
+        background: #42504b;
+      }
+
+      .calculator[data-design="b"] {
+        --primary: #e0b74f;
+        --primary-strong: #f0d27f;
+        --accent: #3a321e;
+        --surface: #171c1a;
+        --field: #101513;
+        --text: #f1f3f2;
+        --subtext: #a4adaa;
+        --line: #3a423f;
+        --soft-line: #2c3330;
+        --result-bg: #202725;
+        --result-text: #ffffff;
+        --focus: rgba(224, 183, 79, 0.24);
+      }
+
+      .calculator[data-design="b"] .app-header,
+      .calculator[data-design="b"] .result-section {
+        background: #202725;
+      }
+
+      .calculator[data-design="b"] .input-section,
+      .calculator[data-design="b"] .tax-section {
+        background: transparent;
+      }
+
+      .calculator[data-design="c"] {
+        --primary: #d77886;
+        --primary-strong: #efa2ad;
+        --accent: #3b2228;
+        --surface: #19191d;
+        --field: #111216;
+        --text: #f2eff0;
+        --subtext: #aaa4a7;
+        --line: #3d383c;
+        --soft-line: #302c2f;
+        --result-bg: #712f39;
+        --result-text: #ffffff;
+        --focus: rgba(215, 120, 134, 0.22);
+      }
+
+      body[data-design="d"],
+      body[data-design="e"] {
+        background: #101311;
+      }
+
+      .calculator[data-design="d"] {
+        --primary: #e2d4ad;
+        --primary-strong: #f2e8cb;
+        --accent: #29271f;
+        --surface: #181713;
+        --field: #232119;
+        --text: #f0eadb;
+        --subtext: #aaa394;
+        --line: #666052;
+        --soft-line: #403c34;
+        --result-bg: #181713;
+        --result-text: #f0eadb;
+        --focus: rgba(226, 212, 173, 0.2);
+        border-top-color: #666052;
+        border-bottom-color: #666052;
+        box-shadow: 0 18px 36px rgba(0, 0, 0, 0.38);
+      }
+
+      .calculator[data-design="d"] .field-shell {
+        border-color: #777061;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+      }
+
+      .calculator[data-design="e"] {
+        --primary: #e07b72;
+        --primary-strong: #f19b93;
+        --accent: #382321;
+        --surface: #181817;
+        --field: #111110;
+        --text: #f1efec;
+        --subtext: #aaa6a0;
+        --line: #5a5651;
+        --soft-line: #373431;
+        --result-bg: #181817;
+        --result-text: #f1efec;
+        --focus: rgba(224, 123, 114, 0.22);
+        border-color: #5a5651;
+        box-shadow: 0 18px 36px rgba(0, 0, 0, 0.38);
+      }
+
+      .calculator[data-design="e"] .app-header {
+        background: #090909;
+      }
+
+      .calculator[data-design="e"] .mode-option input:checked + .mode-label {
+        background: #f1efec;
+        color: #171716;
+      }
+    }
+  </style>
+</head>
+<body data-design="d">
+  <main class="calculator" id="calculator" data-design="d">
+    <header class="app-header">
+      <div>
+        <h1 class="brand-title">시가 세금 계산기</h1>
+        <p class="brand-copy">상품가와 배송비를 합친 예상 결제금액</p>
+      </div>
+      <div class="currency-control">
+        <button type="button" class="currency-trigger" id="currencyTrigger" aria-haspopup="listbox" aria-expanded="false" aria-controls="currencyMenu">
+          <span id="currencyCode">USD</span>
+          <span class="currency-arrow" aria-hidden="true"></span>
+        </button>
+        <div class="currency-menu" id="currencyMenu" role="listbox" hidden></div>
+      </div>
+    </header>
+
+    <section class="result-section" aria-live="polite">
+      <div class="result-head">
+        <p class="eyebrow">총 예상 결제금액</p>
+        <span class="rate-note" id="rateNote">환율 확인 중</span>
+      </div>
+      <output class="total-value" id="finalTotal">계산 전</output>
+      <div class="result-lines">
+        <div class="result-line">
+          <span>상품 결제금액</span>
+          <strong id="purchaseTotal">-</strong>
+        </div>
+        <div class="result-line">
+          <span id="shippingResultLabel">한국 직배송금액</span>
+          <strong id="shippingPurchaseTotal">-</strong>
+        </div>
+        <div class="result-line">
+          <span>예상 세금</span>
+          <strong id="taxTotal">-</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="input-section">
+      <div class="section-heading">
+        <h2 class="section-title">입력</h2>
+        <span class="threshold-note" id="thresholdNote" hidden></span>
+      </div>
+      <div class="mode-control" role="radiogroup" aria-label="구매 방식">
+        <label class="mode-option" for="directMode">
+          <input type="radio" name="purchaseMode" id="directMode" value="direct" checked>
+          <span class="mode-label">직배</span>
+        </label>
+        <label class="mode-option" for="forwarderMode">
+          <input type="radio" name="purchaseMode" id="forwarderMode" value="forwarder">
+          <span class="mode-label">배대지</span>
+        </label>
+      </div>
+
+      <div class="field-grid">
+        <div class="field-row">
+          <label class="field-label" for="weight">총 중량 (시가 무게)</label>
+          <div class="field-shell">
+            <input class="weight-input" type="number" inputmode="decimal" min="0" step="0.1" id="weight" value="150" aria-label="총 중량 (시가 무게)">
+            <span class="field-suffix">g</span>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <label class="field-label" for="goodsAmount" id="goodsLabel">상품가 (USD)</label>
+          <div class="field-shell">
+            <span class="field-prefix currency-symbol">$</span>
+            <input type="text" inputmode="decimal" id="goodsAmount" placeholder="금액 입력" aria-label="상품가">
+          </div>
+        </div>
+
+        <div class="field-row wide">
+          <label class="field-label" for="shippingAmount" id="shippingLabel">한국 직배송비 (USD)</label>
+          <div class="field-shell">
+            <span class="field-prefix currency-symbol">$</span>
+            <input type="text" inputmode="decimal" id="shippingAmount" placeholder="없으면 비워두기" aria-label="한국 직배송비">
+          </div>
+          <p class="shipping-note" id="shippingNote">시가 무게만 반영한 미국 배대지 일반요금 예상값</p>
+        </div>
+      </div>
+
+      <label class="toggle-row" for="over50">
+        <span>50스틱 초과</span>
+        <input class="switch-input" type="checkbox" id="over50">
+        <span class="switch-track" aria-hidden="true"><span class="switch-knob"></span></span>
+      </label>
+    </section>
+
+    <section class="tax-section">
+      <h2 class="section-title">세금 상세</h2>
+      <div class="tax-lines">
+        <div class="tax-line">
+          <span>관세/부가세 합계</span>
+          <strong id="dutyVatTotal">-</strong>
+        </div>
+        <div class="tax-line">
+          <span>담배소비세 + 지방교육세</span>
+          <strong id="localTaxTotal">-</strong>
+        </div>
+        <div class="tax-line">
+          <span>개별소비세</span>
+          <strong id="individualTaxTotal">-</strong>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="./tax-policy.js"></script>
+  <script>
+    const CURRENCIES = {
+      USD: { name: '미국 달러', symbol: '$', decimals: 2 },
+      EUR: { name: '유로', symbol: '€', decimals: 2 },
+      CHF: { name: '스위스 프랑', symbol: 'CHF ', decimals: 2 },
+      HKD: { name: '홍콩 달러', symbol: 'HK$', decimals: 2 },
+      GBP: { name: '영국 파운드', symbol: '£', decimals: 2 },
+      CNY: { name: '중국 위안', symbol: 'CN¥', decimals: 2 },
+      JPY: { name: '일본 엔', symbol: '¥', decimals: 0 },
+      AUD: { name: '호주 달러', symbol: 'A$', decimals: 2 }
+    };
+
+    const PAYMENT_RATE_CACHE_KEY = 'paymentRateCacheV3';
+    const SELECTED_CURRENCY_KEY = 'selectedCurrency';
+    const SHIPPING_MODE_KEY = 'shippingMode';
+    const PAYMENT_RATE_CACHE_MS = 60 * 60 * 1000;
+    const paymentRates = {};
+    const shippingValues = { direct: '', forwarder: '' };
+    let customsRateData = null;
+    let activeCurrency = 'USD';
+    let activeMode = 'direct';
+    let forwarderShippingAuto = true;
+
+    const calculator = document.getElementById('calculator');
+    const goodsInput = document.getElementById('goodsAmount');
+    const shippingInput = document.getElementById('shippingAmount');
+    const weightInput = document.getElementById('weight');
+
+    initialize();
+
+    async function initialize() {
+      restorePreferences();
+      buildCurrencyMenu();
+      bindEvents();
+      updateModeUi();
+      updateCurrencyUi();
+      await updateRates();
+      updateForwarderShipping();
+      calculate();
+    }
+
+    function restorePreferences() {
+      const savedCurrency = localStorage.getItem(SELECTED_CURRENCY_KEY);
+      const savedMode = localStorage.getItem(SHIPPING_MODE_KEY);
+      if (savedCurrency && CURRENCIES[savedCurrency]) activeCurrency = savedCurrency;
+      if (['direct', 'forwarder'].includes(savedMode)) activeMode = savedMode;
+      document.querySelector(`input[name="purchaseMode"][value="${activeMode}"]`).checked = true;
+    }
+
+    function bindEvents() {
+      document.querySelectorAll('input[name="purchaseMode"]').forEach((input) => {
+        input.addEventListener('change', () => {
+          if (!input.checked) return;
+          shippingValues[activeMode] = shippingInput.value;
+          activeMode = input.value;
+          localStorage.setItem(SHIPPING_MODE_KEY, activeMode);
+          shippingInput.value = shippingValues[activeMode] || '';
+          forwarderShippingAuto = true;
+          updateModeUi();
+          updateForwarderShipping();
+          calculate();
+        });
+      });
+
+      [goodsInput, shippingInput].forEach((input) => {
+        input.addEventListener('input', () => {
+          input.value = normalizeNumber(input.value);
+          if (input === shippingInput) {
+            shippingValues[activeMode] = input.value;
+            if (activeMode === 'forwarder') forwarderShippingAuto = false;
+          }
+          calculate();
+        });
+      });
+
+      weightInput.addEventListener('input', () => {
+        if (weightInput.value && Number(weightInput.value) < 0) weightInput.value = '0';
+        updateForwarderShipping();
+        calculate();
+      });
+      weightInput.addEventListener('keydown', (event) => {
+        if (['e', 'E', '+', '-'].includes(event.key)) event.preventDefault();
+      });
+
+      document.getElementById('over50').addEventListener('change', calculate);
+      document.getElementById('currencyTrigger').addEventListener('click', (event) => {
+        event.stopPropagation();
+        const menu = document.getElementById('currencyMenu');
+        const open = menu.hidden;
+        menu.hidden = !open;
+        event.currentTarget.setAttribute('aria-expanded', String(open));
+      });
+
+      document.getElementById('currencyMenu').addEventListener('click', async (event) => {
+        const option = event.target.closest('[data-currency]');
+        if (!option) return;
+        activeCurrency = option.dataset.currency;
+        localStorage.setItem(SELECTED_CURRENCY_KEY, activeCurrency);
+        closeCurrencyMenu();
+        updateCurrencyUi();
+        await updateRates();
+        updateForwarderShipping();
+        calculate();
+      });
+
+      document.addEventListener('click', (event) => {
+        if (!event.target.closest('.currency-control')) closeCurrencyMenu();
+      });
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') closeCurrencyMenu();
+      });
+    }
+
+    function buildCurrencyMenu() {
+      document.getElementById('currencyMenu').innerHTML = Object.entries(CURRENCIES)
+        .map(([code, meta]) => `
+          <button type="button" class="currency-option" role="option" data-currency="${code}" aria-selected="${code === activeCurrency}">
+            <span>${code}</span><small>${meta.name}</small>
+          </button>
+        `)
+        .join('');
+    }
+
+    function closeCurrencyMenu() {
+      document.getElementById('currencyMenu').hidden = true;
+      document.getElementById('currencyTrigger').setAttribute('aria-expanded', 'false');
+    }
+
+    function updateModeUi() {
+      const forwarder = activeMode === 'forwarder';
+      document.getElementById('goodsLabel').textContent = `${forwarder ? '상품가+현지배송비' : '상품가'} (${activeCurrency})`;
+      goodsInput.setAttribute('aria-label', forwarder ? '상품가와 현지배송비' : '상품가');
+      document.getElementById('shippingLabel').textContent = `${forwarder ? '배대지→한국 예상 배송비' : '한국 직배송비'} (${activeCurrency})`;
+      document.getElementById('shippingResultLabel').textContent = forwarder ? '배대지→한국 배송금액' : '한국 직배송금액';
+      document.getElementById('shippingNote').classList.toggle('show', forwarder);
+      shippingInput.placeholder = forwarder ? '무게 기준 자동 계산' : '없으면 비워두기';
+      shippingInput.setAttribute('aria-label', forwarder ? '배대지에서 한국 예상 배송비' : '한국 직배송비');
+    }
+
+    function updateCurrencyUi() {
+      const meta = CURRENCIES[activeCurrency];
+      document.getElementById('currencyCode').textContent = activeCurrency;
+      document.querySelectorAll('.currency-symbol').forEach((node) => {
+        node.textContent = meta.symbol;
+      });
+      document.querySelectorAll('[data-currency]').forEach((option) => {
+        option.setAttribute('aria-selected', String(option.dataset.currency === activeCurrency));
+      });
+      updateModeUi();
+      renderThresholdNote();
+    }
+
+    async function updateRates() {
+      document.getElementById('rateNote').classList.remove('warning');
+      document.getElementById('rateNote').textContent = '환율 확인 중';
+      try {
+        const usdPromise = fetchPaymentRate('USD');
+        const selectedPromise = activeCurrency === 'USD' ? usdPromise : fetchPaymentRate(activeCurrency);
+        const customsPromise = loadCustomsRates();
+        const [usdRate, selectedRate, customsData] = await Promise.all([usdPromise, selectedPromise, customsPromise]);
+        paymentRates.USD = usdRate;
+        paymentRates[activeCurrency] = selectedRate;
+        customsRateData = customsData;
+        if (!customsData.rates.USD || !customsData.rates[activeCurrency]) throw new Error('customs-rate');
+        renderRateNote();
+        renderThresholdNote();
+      } catch (error) {
+        document.getElementById('rateNote').textContent = '환율 조회 실패';
+        renderThresholdNote();
+        clearResults();
+      }
+    }
+
+    function getPaymentRateCache() {
+      try {
+        return JSON.parse(localStorage.getItem(PAYMENT_RATE_CACHE_KEY) || '{}');
+      } catch (error) {
+        return {};
+      }
+    }
+
+    function cachePaymentRate(currency, payload) {
+      const cache = getPaymentRateCache();
+      cache[currency] = payload;
+      localStorage.setItem(PAYMENT_RATE_CACHE_KEY, JSON.stringify(cache));
+    }
+
+    async function fetchPaymentRate(currency) {
+      const now = Date.now();
+      if (paymentRates[currency] && now - paymentRates[currency].fetchedAt < PAYMENT_RATE_CACHE_MS) {
+        return paymentRates[currency];
+      }
+      const cached = getPaymentRateCache()[currency];
+      if (cached && now - cached.fetchedAt < PAYMENT_RATE_CACHE_MS) {
+        return cached;
+      }
+
+      const url = `https://m.search.naver.com/p/csearch/content/qapirender.nhn?key=calculator&pkid=141&q=%ED%99%98%EC%9C%A8&where=m&u1=keb&u6=standardUnit&u7=0&u3=${currency}&u4=KRW&u8=down&u2=1`;
+      try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('payment-rate');
+        const data = await response.json();
+        const base = Number(String(data.country[0].value).replace(/,/g, ''));
+        const quote = Number(String(data.country[1].value).replace(/,/g, ''));
+        if (!Number.isFinite(base) || !Number.isFinite(quote) || base === 0) throw new Error('payment-rate');
+        const payload = { rate: quote / base, fetchedAt: now, stale: false };
+        cachePaymentRate(currency, payload);
+        return payload;
+      } catch (error) {
+        if (cached?.rate) return { ...cached, stale: true };
+        throw error;
+      }
+    }
+
+    async function loadCustomsRates() {
+      if (customsRateData) return customsRateData;
+      const response = await fetch('./customs-rates.json', { cache: 'no-cache' });
+      if (!response.ok) throw new Error('customs-rate');
+      const data = await response.json();
+      if (!data.rates || !Number.isFinite(Number(data.rates.USD))) throw new Error('customs-rate');
+      Object.keys(data.rates).forEach((currency) => {
+        data.rates[currency] = Number(data.rates[currency]);
+      });
+      return data;
+    }
+
+    function renderRateNote() {
+      const paymentPayload = paymentRates[activeCurrency];
+      const payment = paymentPayload?.rate;
+      const customs = customsRateData?.rates?.[activeCurrency];
+      const note = document.getElementById('rateNote');
+      if (!payment || !customs) {
+        note.textContent = '환율 확인 중';
+        return;
+      }
+      const period = `${customsRateData.weekStart}~${customsRateData.weekEnd}`;
+      const today = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit'
+      }).format(new Date());
+      const isCurrent = today >= customsRateData.weekStart && today <= customsRateData.weekEnd;
+      const hasDelayedRate = paymentPayload.stale || !isCurrent;
+      note.classList.toggle('warning', hasDelayedRate);
+      note.textContent = paymentPayload.stale
+        ? '결제환율 갱신 지연'
+        : isCurrent
+          ? `결제 ${formatRate(payment)} · 과세 ${formatRate(customs)}`
+          : '과세환율 갱신 지연';
+      note.title = `네이버 결제환율 / 관세청 주간 과세환율 (${period})`;
+    }
+
+    function renderThresholdNote() {
+      const note = document.getElementById('thresholdNote');
+      const customsUsdRate = customsRateData?.rates?.USD;
+      const customsSelectedRate = customsRateData?.rates?.[activeCurrency];
+      if (activeCurrency === 'USD' || !customsUsdRate || !customsSelectedRate) {
+        note.hidden = true;
+        note.textContent = '';
+        return;
+      }
+
+      const amount = (150 * customsUsdRate) / customsSelectedRate;
+      const decimals = CURRENCIES[activeCurrency].decimals;
+      const formatted = amount.toLocaleString('ko-KR', {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals
+      });
+      note.textContent = `150달러 ≈ ${formatted} ${activeCurrency}`;
+      note.hidden = false;
+    }
+
+    function estimateForwarderUsd(weightGrams) {
+      if (!Number.isFinite(weightGrams) || weightGrams <= 0) return null;
+      const pounds = Math.max(1, Math.ceil(weightGrams / 453.6));
+      if (pounds === 1) return 10.9;
+      return 13.9 + ((pounds - 2) * 2);
+    }
+
+    function updateForwarderShipping() {
+      if (activeMode !== 'forwarder' || !forwarderShippingAuto) return;
+      const estimateUsd = estimateForwarderUsd(Number(weightInput.value));
+      let estimate = estimateUsd;
+      if (estimateUsd !== null && activeCurrency !== 'USD') {
+        const usdPaymentRate = paymentRates.USD?.rate;
+        const selectedPaymentRate = paymentRates[activeCurrency]?.rate;
+        if (!usdPaymentRate || !selectedPaymentRate) return;
+        estimate = (estimateUsd * usdPaymentRate) / selectedPaymentRate;
+      }
+      shippingInput.value = estimate === null ? '' : estimate.toFixed(CURRENCIES[activeCurrency].decimals);
+      shippingValues.forwarder = shippingInput.value;
+    }
+
+    function calculate() {
+      const weight = Number(weightInput.value);
+      const goods = parseOptionalNumber(goodsInput.value, NaN);
+      const shipping = parseOptionalNumber(shippingInput.value, 0);
+      const paymentRate = paymentRates[activeCurrency]?.rate;
+      const customsSelectedRate = customsRateData?.rates?.[activeCurrency];
+      const customsUsdRate = customsRateData?.rates?.USD;
+
+      if (![weight, goods, shipping, paymentRate, customsSelectedRate, customsUsdRate]
+        .every((value) => Number.isFinite(value) && value >= 0)) {
+        clearResults();
+        return;
+      }
+
+      const summary = CigarTaxPolicy.calculate({
+        weight,
+        goodsAmount: goods,
+        koreaShipping: shipping,
+        isOver50: document.getElementById('over50').checked,
+        shippingMode: activeMode
+      }, {
+        currency: activeCurrency,
+        paymentRate,
+        customsSelectedRate,
+        customsUsdRate
+      });
+
+      setText('finalTotal', formatKrw(summary.purchaseKrw + summary.totalTax));
+      setText('purchaseTotal', formatKrw(summary.goodsPurchaseKrw));
+      setText('shippingPurchaseTotal', formatKrw(summary.shippingPurchaseKrw));
+      setText('taxTotal', formatKrw(summary.totalTax));
+      setText('dutyVatTotal', formatKrw(summary.dubuTax));
+      setText('localTaxTotal', formatKrw(summary.localTax));
+      setText('individualTaxTotal', formatKrw(summary.indivTax));
+    }
+
+    function clearResults() {
+      setText('finalTotal', '계산 전');
+      ['purchaseTotal', 'shippingPurchaseTotal', 'taxTotal', 'dutyVatTotal', 'localTaxTotal', 'individualTaxTotal']
+        .forEach((id) => setText(id, '-'));
+    }
+
+    function normalizeNumber(value) {
+      let dot = false;
+      return String(value).split('').filter((char) => {
+        if (/\d/.test(char)) return true;
+        if (char === '.' && !dot) {
+          dot = true;
+          return true;
+        }
+        return false;
+      }).join('');
+    }
+
+    function parseOptionalNumber(value, emptyValue) {
+      const normalized = String(value).trim();
+      return normalized ? Number(normalized) : emptyValue;
+    }
+
+    function formatKrw(value) {
+      return `${Math.round(value).toLocaleString('ko-KR')}원`;
+    }
+
+    function formatRate(value) {
+      return Number(value).toLocaleString('ko-KR', { maximumFractionDigits: 2 });
+    }
+
+    function setText(id, value) {
+      document.getElementById(id).textContent = value;
+    }
+  </script>
+</body>
+</html>

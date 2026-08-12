@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>시가 직구 세금 계산기 와이어프레임</title>
+  <style>
+    :root {
+      --bg: #eef1f4;
+      --surface: #ffffff;
+      --ink: #18202f;
+      --muted: #667085;
+      --line: #d8dee8;
+      --blue: #1f5fbf;
+      --green: #15803d;
+      --amber: #b45309;
+      --soft-blue: #eef5ff;
+      --soft-green: #effaf3;
+      --soft-amber: #fff7ed;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 24px;
+      font-family: "Avenir Next", "Pretendard Variable", "Noto Sans KR", sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+    }
+
+    h1 {
+      margin: 0 0 6px;
+      font-size: 24px;
+      letter-spacing: 0;
+    }
+
+    .intro {
+      margin: 0 0 20px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(280px, 1fr));
+      gap: 18px;
+      align-items: start;
+    }
+
+    .option {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .option-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      min-height: 34px;
+    }
+
+    .option-title h2 {
+      margin: 0;
+      font-size: 16px;
+      letter-spacing: 0;
+    }
+
+    .tag {
+      padding: 4px 8px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--muted);
+      background: #fff;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .phone {
+      width: 100%;
+      max-width: 390px;
+      min-height: 720px;
+      margin: 0 auto;
+      padding: 14px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      background: #f8fafc;
+      box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
+    }
+
+    .screen {
+      display: flex;
+      min-height: 690px;
+      flex-direction: column;
+      gap: 10px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .title {
+      font-size: 19px;
+      font-weight: 800;
+      letter-spacing: 0;
+    }
+
+    .mini {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .panel {
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .panel.blue {
+      background: var(--soft-blue);
+    }
+
+    .panel.green {
+      background: var(--soft-green);
+    }
+
+    .panel.amber {
+      background: var(--soft-amber);
+    }
+
+    .label {
+      margin-bottom: 6px;
+      color: #344054;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .field {
+      display: flex;
+      min-height: 42px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 10px 11px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      background: #fff;
+      color: #101828;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .hint {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.4;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 9px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .rate {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 9px;
+      border: 1px solid #d6deea;
+      border-radius: 8px;
+      background: #fff;
+      font-size: 12px;
+    }
+
+    .rate strong {
+      color: #111827;
+    }
+
+    .toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 11px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f8fafc;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .switch {
+      width: 42px;
+      height: 24px;
+      padding: 3px;
+      border-radius: 999px;
+      background: #cbd5e1;
+    }
+
+    .knob {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #fff;
+    }
+
+    .button {
+      display: flex;
+      min-height: 44px;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      background: var(--blue);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .button.secondary {
+      background: #e8eef8;
+      color: var(--blue);
+    }
+
+    .button.green {
+      background: var(--green);
+    }
+
+    .result-hero {
+      padding: 16px;
+      border-radius: 8px;
+      background: #111827;
+      color: #fff;
+    }
+
+    .result-hero .caption {
+      color: #cbd5e1;
+      font-size: 12px;
+    }
+
+    .result-hero .amount {
+      margin-top: 5px;
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: 0;
+    }
+
+    .rows {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 9px 0;
+      border-bottom: 1px solid #edf1f7;
+      color: #344054;
+      font-size: 13px;
+    }
+
+    .row strong {
+      color: #101828;
+    }
+
+    .step {
+      display: grid;
+      grid-template-columns: 28px 1fr;
+      gap: 10px;
+      align-items: start;
+    }
+
+    .step-no {
+      display: flex;
+      width: 28px;
+      height: 28px;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      background: #18202f;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .summary-strip {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .metric {
+      padding: 11px;
+      border-radius: 8px;
+      background: #f8fafc;
+      border: 1px solid var(--line);
+    }
+
+    .metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .metric strong {
+      display: block;
+      margin-top: 5px;
+      font-size: 16px;
+    }
+
+    @media (max-width: 1080px) {
+      .board {
+        grid-template-columns: 1fr;
+      }
+
+      .phone {
+        max-width: 430px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      body {
+        padding: 14px;
+      }
+
+      .phone {
+        padding: 10px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <h1>시가 직구 세금 계산기 와이어프레임</h1>
+  <p class="intro">B안을 기준으로 최종 결제금액을 가장 크게 보이게 만든 3가지 정리안입니다.</p>
+
+  <main class="board">
+    <section class="option">
+      <div class="option-title">
+        <h2>B1. 다크 히어로형</h2>
+        <span class="tag">강조</span>
+      </div>
+      <div class="phone">
+        <div class="screen">
+          <div class="topbar">
+            <div>
+              <div class="title">시가 세금 계산기</div>
+              <div class="mini">USD 1,495원 · 150달러 기준</div>
+            </div>
+            <div class="field" style="width: 84px; min-height: 36px;">USD</div>
+          </div>
+
+          <div class="result-hero">
+            <div class="caption">총 예상 결제금액</div>
+            <div class="amount">561,246원</div>
+            <div class="caption" style="margin-top: 8px;">결제 350,000원 + 예상세금 211,246원</div>
+          </div>
+
+          <div class="panel">
+            <div class="grid-2">
+              <div>
+                <div class="label">총 중량</div>
+                <div class="field">150 g</div>
+              </div>
+              <div>
+                <div class="label">총 결제금액</div>
+                <div class="field">$234.00</div>
+                <div class="hint">상품가와 배송비를 합친 금액</div>
+              </div>
+            </div>
+            <div class="toggle" style="margin-top: 11px;">
+              <span>50스틱 초과</span>
+              <div class="switch"><div class="knob"></div></div>
+            </div>
+          </div>
+
+          <div class="button">계산하기</div>
+
+          <div class="panel" style="flex: 1;">
+            <div class="label">세금 상세</div>
+            <div class="summary-strip">
+              <div class="metric"><span>세금 합계</span><strong>211,246원</strong></div>
+              <div class="metric"><span>관부가세</span><strong>189,000원</strong></div>
+            </div>
+            <div class="rows" style="margin-top: 9px;">
+              <div class="row"><span>관세</span><strong>140,000원</strong></div>
+              <div class="row"><span>부가세</span><strong>49,000원</strong></div>
+              <div class="row"><span>담배소비세</span><strong>15,450원</strong></div>
+              <div class="row"><span>지방교육세</span><strong>6,796원</strong></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="option">
+      <div class="option-title">
+        <h2>B2. 영수증 정리형</h2>
+        <span class="tag">추천</span>
+      </div>
+      <div class="phone">
+        <div class="screen">
+          <div class="topbar">
+            <div>
+              <div class="title">시가 세금 계산기</div>
+              <div class="mini">상품가 + 배송비 포함 입력</div>
+            </div>
+            <div class="field" style="width: 84px; min-height: 36px;">USD</div>
+          </div>
+
+          <div class="panel" style="padding: 16px; background: #fff; border-color: #c7d2e2;">
+            <div class="label">총 예상 결제금액</div>
+            <div style="font-size: 30px; font-weight: 900;">561,246원</div>
+            <div class="rows" style="margin-top: 12px;">
+              <div class="row"><span>입력 결제금액</span><strong>350,000원</strong></div>
+              <div class="row"><span>예상 세금</span><strong>211,246원</strong></div>
+            </div>
+          </div>
+
+          <div class="panel blue">
+            <div class="label">입력</div>
+            <div class="grid-2">
+              <div>
+                <div class="label">총 중량</div>
+                <div class="field">150 g</div>
+              </div>
+              <div>
+                <div class="label">총 결제금액</div>
+                <div class="field">$234.00</div>
+              </div>
+            </div>
+            <div class="toggle" style="margin-top: 11px;">
+              <span>50스틱 초과</span>
+              <div class="switch"><div class="knob"></div></div>
+            </div>
+          </div>
+
+          <div class="panel" style="flex: 1;">
+            <div class="label">세금 상세</div>
+            <div class="rows">
+              <div class="row"><span>세금 합계</span><strong>211,246원</strong></div>
+              <div class="row"><span>관세/부가세 합계</span><strong>189,000원</strong></div>
+              <div class="row"><span>담배소비세 + 지방교육세</span><strong>22,246원</strong></div>
+              <div class="row"><span>개별소비세</span><strong>0원</strong></div>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="button">계산하기</div>
+            <div class="button green">공유하기</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="option">
+      <div class="option-title">
+        <h2>B3. 미니 대시보드형</h2>
+        <span class="tag">간결</span>
+      </div>
+      <div class="phone">
+        <div class="screen">
+          <div class="topbar">
+            <div>
+              <div class="title">시가 세금 계산기</div>
+              <div class="mini">USD · 1,495원</div>
+            </div>
+            <div class="button secondary" style="width: 72px; min-height: 36px;">공유</div>
+          </div>
+
+          <div class="panel green">
+            <div class="label">총 예상 결제금액</div>
+            <div style="font-size: 32px; font-weight: 900;">561,246원</div>
+            <div class="summary-strip" style="margin-top: 12px;">
+              <div class="metric" style="background: #fff;"><span>결제금액</span><strong>350,000원</strong></div>
+              <div class="metric" style="background: #fff;"><span>세금</span><strong>211,246원</strong></div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="grid-2">
+              <div>
+                <div class="label">총 중량</div>
+                <div class="field">150 g</div>
+              </div>
+              <div>
+                <div class="label">총 결제금액</div>
+                <div class="field">$234.00</div>
+              </div>
+            </div>
+            <div class="grid-2" style="margin-top: 10px;">
+              <div class="field">50스틱 이하</div>
+              <div class="field">배송비 포함</div>
+            </div>
+          </div>
+
+          <div class="panel" style="flex: 1;">
+            <div class="label">세금 요약</div>
+            <div class="summary-strip">
+              <div class="metric"><span>관세</span><strong>140,000원</strong></div>
+              <div class="metric"><span>부가세</span><strong>49,000원</strong></div>
+              <div class="metric"><span>담배소비세</span><strong>15,450원</strong></div>
+              <div class="metric"><span>지방교육세</span><strong>6,796원</strong></div>
+            </div>
+          </div>
+
+          <div class="button">계산하기</div>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+
+</html>
