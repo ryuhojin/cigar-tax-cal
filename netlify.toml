@@ -1,0 +1,3 @@
+[build]
+  command = "mkdir -p dist && cp index.html tax-policy.js customs-rates.json dist/"
+  publish = "dist"

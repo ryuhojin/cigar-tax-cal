@@ -19,6 +19,16 @@
 
 정상 갱신되면 Actions가 `customs-rates.json`을 커밋하고 Netlify가 새 정적 파일을 배포합니다. 갱신에 실패하면 마지막 정상 환율을 사용하면서 화면에 `과세환율 갱신 지연`을 표시합니다.
 
+## Netlify 배포
+
+저장소를 Netlify에 연결하면 `netlify.toml` 설정이 자동으로 적용됩니다. 별도의 빌드 설정은 입력하지 않아도 됩니다.
+
+- 배포 디렉터리: `dist`
+- 실제 공개 파일: `index.html`, `tax-policy.js`, `customs-rates.json`
+- 배포 제외: 백업, UI 시안, 테스트, 환율 갱신 스크립트
+
+백업과 시안 파일은 저장소에는 보존되지만 웹사이트 URL로는 공개되지 않습니다.
+
 ## 확인
 
 ```bash
