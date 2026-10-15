@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#f1f4f1" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#141815" media="(prefers-color-scheme: dark)">
   <meta name="google-adsense-account" content="ca-pub-6860531784379099">
   <title>시가 직구 세금 계산기</title>
   <style>
@@ -13,1238 +15,418 @@
       color-scheme: light;
       font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Noto Sans KR", sans-serif;
       font-synthesis: none;
+      --canvas: #f1f4f1;
+      --surface: #ffffff;
+      --field: #ffffff;
+      --text: #222c25;
+      --subtext: #5f6c62;
+      --line: #dce3dc;
+      --field-line: #bfcbbf;
+      --primary: #35674c;
+      --accent: #e6eee7;
+      --mode-bg: #e2e8e1;
+      --focus: rgba(53, 103, 76, 0.16);
+      --switch-bg: #cbd5cd;
+      --switch-knob: #ffffff;
+      --warning: #8a4d16;
+      --paper-shadow: 0 5px 14px rgba(27, 48, 32, 0.035);
+      --menu-shadow: 0 10px 25px rgba(25, 37, 26, 0.13);
     }
 
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       min-width: 320px;
       min-height: 100vh;
       margin: 0;
-      padding: 18px 14px 48px;
-      background: #f3f5f4;
-      color: #18211f;
-      letter-spacing: 0;
-    }
-
-    button,
-    input {
-      font: inherit;
-    }
-
-    button {
-      cursor: pointer;
-    }
-
-    .sample-picker {
-      position: sticky;
-      top: 0;
-      z-index: 50;
-      display: grid;
-      width: min(100%, 720px);
-      grid-template-columns: repeat(5, minmax(0, 1fr));
-      margin: 0 auto 18px;
-      border-bottom: 1px solid #cfd7d4;
-      background: rgba(243, 245, 244, 0.96);
-      backdrop-filter: blur(12px);
-    }
-
-    .sample-tab {
-      min-width: 0;
-      padding: 11px 6px 10px;
-      border: 0;
-      border-bottom: 3px solid transparent;
-      background: transparent;
-      color: #71807b;
-      font-size: 12px;
-      font-weight: 600;
-      line-height: 1.25;
-    }
-
-    .sample-tab[aria-selected="true"] {
-      border-bottom-color: #23675e;
-      color: #17211f;
-    }
-
-    .calculator {
-      --primary: #23675e;
-      --primary-strong: #194f48;
-      --accent: #e9f2ee;
-      --canvas: #f3f5f4;
-      --surface: #ffffff;
-      --field: #ffffff;
-      --text: #18211f;
-      --subtext: #65736f;
-      --line: #d1dad6;
-      --soft-line: #e6ece9;
-      --result-bg: #ffffff;
-      --result-text: #18211f;
-      --focus: rgba(35, 103, 94, 0.2);
-      width: min(100%, 430px);
-      margin: 0 auto;
+      padding: 16px 14px 36px;
+      background: var(--canvas);
       color: var(--text);
+      font-size: 14px;
+      font-weight: 400;
+      line-height: 1.5;
+      letter-spacing: 0;
+      -webkit-text-size-adjust: 100%;
     }
+
+    button, input { font: inherit; letter-spacing: 0; }
+    button, summary, .mode-option, .toggle-row { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    h1, h2, p { margin: 0; }
+    button { color: inherit; }
+
+    .calculator { width: min(100%, 420px); margin: 0 auto; }
 
     .app-header {
       display: flex;
-      align-items: flex-start;
+      align-items: center;
       justify-content: space-between;
       gap: 12px;
-      margin-bottom: 12px;
+      padding: 4px 4px 18px;
     }
 
-    .brand-title {
-      margin: 0;
-      color: var(--text);
-      font-size: 24px;
-      font-weight: 760;
-      line-height: 1.2;
-    }
-
-    .brand-copy {
-      margin: 5px 0 0;
-      color: var(--subtext);
-      font-size: 13px;
-      font-weight: 500;
-      line-height: 1.35;
-    }
-
-    .currency-control {
-      position: relative;
-      flex: 0 0 auto;
-    }
+    .brand { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .brand-title { font-size: 19px; font-weight: 500; line-height: 1.3; white-space: nowrap; }
+    .icon { display: block; width: 18px; height: 18px; flex: 0 0 auto; stroke-width: 1.7; }
+    .brand-icon { width: 21px; height: 21px; color: var(--primary); }
+    .currency-control { position: relative; flex: 0 0 auto; z-index: 5; }
 
     .currency-trigger {
       display: flex;
-      min-width: 82px;
-      min-height: 42px;
+      min-width: 76px;
+      min-height: 44px;
       align-items: center;
-      justify-content: space-between;
+      justify-content: center;
       gap: 8px;
-      padding: 0 11px;
-      border: 1px solid var(--line);
-      border-radius: 8px;
+      padding: 0 10px;
+      border: 1px solid var(--field-line);
+      border-radius: 7px;
       background: var(--surface);
-      color: var(--text);
-      font-size: 15px;
-      font-weight: 700;
-    }
-
-    .currency-trigger:focus-visible,
-    .currency-option:focus-visible,
-    .sample-tab:focus-visible {
-      outline: 3px solid var(--focus);
-      outline-offset: 2px;
+      font-size: 14px;
+      font-weight: 500;
     }
 
     .currency-arrow {
-      width: 8px;
-      height: 8px;
-      border-right: 2px solid currentColor;
-      border-bottom: 2px solid currentColor;
+      width: 7px;
+      height: 7px;
+      flex: 0 0 auto;
+      border-right: 1.5px solid currentColor;
+      border-bottom: 1.5px solid currentColor;
       transform: translateY(-2px) rotate(45deg);
+    }
+
+    .currency-trigger:focus-visible, .currency-option:focus-visible, .tax-summary:focus-visible {
+      outline: 2px solid var(--primary);
+      outline-offset: 3px;
     }
 
     .currency-menu {
       position: absolute;
-      top: calc(100% + 6px);
+      top: calc(100% + 7px);
       right: 0;
-      z-index: 60;
-      width: 178px;
-      max-height: 280px;
+      width: 196px;
+      max-height: min(380px, 65dvh);
       overflow-y: auto;
+      overscroll-behavior: contain;
       padding: 5px;
-      border: 1px solid var(--line);
+      border: 1px solid var(--field-line);
       border-radius: 8px;
       background: var(--surface);
-      box-shadow: 0 16px 34px rgba(24, 33, 31, 0.15);
+      box-shadow: var(--menu-shadow);
     }
 
-    .currency-menu[hidden] {
-      display: none;
-    }
-
+    .currency-menu[hidden] { display: none; }
     .currency-option {
       display: flex;
       width: 100%;
-      min-height: 38px;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      padding: 7px 8px;
-      border: 0;
-      border-radius: 6px;
-      background: transparent;
-      color: var(--text);
-      font-size: 13px;
-      font-weight: 650;
-      text-align: left;
-    }
-
-    .currency-option small {
-      color: var(--subtext);
-      font-size: 11px;
-      font-weight: 500;
-    }
-
-    .currency-option:hover,
-    .currency-option[aria-selected="true"] {
-      background: var(--accent);
-      color: var(--primary-strong);
-    }
-
-    .result-section,
-    .input-section,
-    .tax-section {
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: var(--surface);
-    }
-
-    .result-section {
-      position: relative;
-      margin-bottom: 10px;
-      padding: 19px 18px 15px;
-      border-left: 5px solid var(--primary);
-      background: var(--result-bg);
-      color: var(--result-text);
-    }
-
-    .result-head {
-      display: flex;
-      min-height: 20px;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-    }
-
-    .eyebrow,
-    .section-title {
-      margin: 0;
-      font-size: 12px;
-      font-weight: 650;
-      line-height: 1.35;
-    }
-
-    .eyebrow {
-      color: var(--subtext);
-    }
-
-    .rate-note {
-      color: var(--subtext);
-      font-size: 10px;
-      font-weight: 550;
-      white-space: nowrap;
-    }
-
-    .rate-note.warning {
-      color: #9a4d00;
-    }
-
-    .total-value {
-      display: block;
-      min-height: 49px;
-      margin-top: 7px;
-      color: inherit;
-      font-size: 40px;
-      font-weight: 760;
-      line-height: 1.18;
-      word-break: keep-all;
-    }
-
-    .result-lines,
-    .tax-lines {
-      margin-top: 12px;
-    }
-
-    .result-line,
-    .tax-line {
-      display: flex;
-      min-height: 39px;
+      min-height: 46px;
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      padding: 9px 0;
-      border-bottom: 1px solid var(--soft-line);
-      color: var(--subtext);
-      font-size: 13px;
-      line-height: 1.35;
-    }
-
-    .result-line:last-child,
-    .tax-line:last-child {
-      border-bottom: 0;
-    }
-
-    .result-line strong,
-    .tax-line strong {
-      flex: 0 0 auto;
-      color: var(--text);
+      padding: 9px 11px;
+      border: 0;
+      border-radius: 5px;
+      background: transparent;
       font-size: 14px;
-      font-weight: 700;
-      text-align: right;
-      white-space: nowrap;
+      font-weight: 500;
+      text-align: left;
     }
 
-    .input-section,
-    .tax-section {
-      margin-bottom: 10px;
-      padding: 14px;
+    .currency-option small { color: var(--subtext); font-size: 12px; font-weight: 400; }
+    .currency-option:hover, .currency-option[aria-selected="true"] { background: var(--accent); color: var(--primary); }
+
+    .calculator-content { display: grid; grid-template-columns: minmax(0, 1fr); gap: 26px; align-items: start; }
+    .result-section { position: relative; min-width: 0; margin: 0; padding: 21px 22px 0; background: var(--surface); box-shadow: var(--paper-shadow); }
+
+    /* The repeated cuts form the lower edge of the receipt. */
+    .result-section::after {
+      content: "";
+      position: absolute;
+      inset: auto 0 -7px;
+      height: 8px;
+      background: var(--surface);
+      clip-path: polygon(0 0,100% 0,100% 15%,98% 100%,96% 15%,94% 100%,92% 15%,90% 100%,88% 15%,86% 100%,84% 15%,82% 100%,80% 15%,78% 100%,76% 15%,74% 100%,72% 15%,70% 100%,68% 15%,66% 100%,64% 15%,62% 100%,60% 15%,58% 100%,56% 15%,54% 100%,52% 15%,50% 100%,48% 15%,46% 100%,44% 15%,42% 100%,40% 15%,38% 100%,36% 15%,34% 100%,32% 15%,30% 100%,28% 15%,26% 100%,24% 15%,22% 100%,20% 15%,18% 100%,16% 15%,14% 100%,12% 15%,10% 100%,8% 15%,6% 100%,4% 15%,2% 100%,0 15%);
     }
 
-    .section-title {
-      margin-bottom: 10px;
+    .eyebrow { color: var(--subtext); font-size: 14px; font-weight: 400; line-height: 1.4; }
+    .total-value {
+      display: block;
+      min-height: 61px;
+      margin: 6px 0 12px;
       color: var(--text);
-    }
-
-    .section-heading {
-      display: flex;
-      min-height: 16px;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      margin-bottom: 10px;
-    }
-
-    .section-heading .section-title {
-      margin-bottom: 0;
-    }
-
-    .threshold-note {
-      color: var(--subtext);
-      font-size: 10px;
-      font-weight: 550;
+      font-size: 42px;
+      font-weight: 500;
       line-height: 1.35;
-      text-align: right;
+      font-variant-numeric: tabular-nums;
       white-space: nowrap;
     }
+
+    .total-unit { display: inline-block; margin-left: 4px; color: var(--subtext); font-size: 0.55em; font-weight: 400; }
+
+    .result-lines { padding: 12px 0 14px; border-top: 1px dashed var(--field-line); }
+    .result-line { display: flex; min-height: 32px; align-items: center; justify-content: space-between; gap: 12px; }
+    .result-line > span { color: var(--subtext); font-size: 13px; line-height: 1.5; }
+    .result-line strong { flex: 0 0 auto; font-size: 16px; font-weight: 500; font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+    #taxTotal { color: var(--primary); }
+
+    .tax-section { border-top: 1px dashed var(--field-line); }
+    .tax-summary { display: flex; min-height: 48px; align-items: center; justify-content: space-between; gap: 12px; list-style: none; }
+    .tax-summary::-webkit-details-marker { display: none; }
+    .tax-summary .section-title { font-size: 13px; }
+    .tax-summary .currency-arrow { margin-right: 2px; color: var(--subtext); }
+    .tax-section[open] .tax-summary .currency-arrow { transform: translateY(2px) rotate(225deg); }
+    .tax-lines { padding: 0 0 14px; }
+    .tax-line { display: flex; min-height: 31px; align-items: center; justify-content: space-between; gap: 12px; font-size: 12px; }
+    .tax-line > span { color: var(--subtext); }
+    .tax-line strong { flex: 0 0 auto; font-weight: 400; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+    .input-section { min-width: 0; padding: 0 4px; }
+    .section-heading { display: flex; min-height: 24px; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px 10px; margin-bottom: 12px; }
+    .section-title { font-size: 16px; font-weight: 500; line-height: 1.5; }
+    .threshold-note { color: var(--subtext); font-size: 12px; line-height: 1.4; font-variant-numeric: tabular-nums; }
 
     .mode-control {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      margin-bottom: 13px;
-      border-bottom: 1px solid var(--line);
-    }
-
-    .mode-option {
-      position: relative;
-      margin: 0;
-      cursor: pointer;
-    }
-
-    .mode-option input,
-    .switch-input {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      opacity: 0;
-      pointer-events: none;
-    }
-
-    .mode-label {
-      display: flex;
-      min-height: 42px;
-      align-items: center;
-      justify-content: center;
-      border-bottom: 3px solid transparent;
-      color: var(--subtext);
-      font-size: 13px;
-      font-weight: 600;
-    }
-
-    .mode-option input:checked + .mode-label {
-      border-bottom-color: var(--primary);
-      color: var(--primary-strong);
-      font-weight: 700;
-    }
-
-    .mode-option input:focus-visible + .mode-label {
-      outline: 3px solid var(--focus);
-      outline-offset: -3px;
-    }
-
-    .field-grid {
-      display: grid;
-      grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
-      gap: 10px;
-    }
-
-    .field-row {
-      min-width: 0;
-    }
-
-    .field-row.wide {
-      grid-column: 1 / -1;
-    }
-
-    .field-label {
-      display: block;
-      min-height: 17px;
-      margin-bottom: 6px;
-      color: var(--subtext);
-      font-size: 11px;
-      font-weight: 600;
-      line-height: 1.35;
-    }
-
-    .field-shell {
-      display: flex;
-      min-height: 48px;
-      align-items: center;
-      gap: 5px;
-      padding: 0 12px;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: var(--field);
-      color: var(--text);
-    }
-
-    .field-shell:focus-within {
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px var(--focus);
-    }
-
-    .field-shell input {
-      width: 100%;
-      min-width: 0;
-      padding: 0;
-      border: 0;
-      outline: 0;
-      background: transparent;
-      color: inherit;
-      font-size: 16px;
-      font-weight: 700;
-    }
-
-    .field-shell input::placeholder {
-      color: #929d99;
-      font-size: 12px;
-      font-weight: 500;
-    }
-
-    .field-prefix,
-    .field-suffix {
-      flex: 0 0 auto;
-      color: var(--text);
-      font-size: 15px;
-      font-weight: 700;
-    }
-
-    .weight-input {
-      appearance: textfield;
-      -moz-appearance: textfield;
-    }
-
-    .weight-input::-webkit-inner-spin-button,
-    .weight-input::-webkit-outer-spin-button {
-      margin: 0;
-      appearance: none;
-      -webkit-appearance: none;
-    }
-
-    .shipping-note {
-      display: none;
-      margin: 5px 0 0;
-      color: var(--subtext);
-      font-size: 10px;
-      font-weight: 500;
-      line-height: 1.35;
-    }
-
-    .shipping-note.show {
-      display: block;
-    }
-
-    .toggle-row {
-      display: flex;
-      min-height: 48px;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      margin-top: 12px;
-      padding: 0 12px;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: var(--field);
-      color: var(--text);
-      font-size: 13px;
-      font-weight: 650;
-      cursor: pointer;
-    }
-
-    .switch-track {
-      display: block;
-      width: 42px;
-      height: 24px;
+      gap: 3px;
+      margin-bottom: 17px;
       padding: 3px;
-      border-radius: 999px;
-      background: #c8d1ce;
-      transition: background-color 0.18s ease;
-    }
-
-    .switch-knob {
-      display: block;
-      width: 18px;
-      height: 18px;
-      border-radius: 50%;
-      background: #ffffff;
-      transition: transform 0.18s ease;
-    }
-
-    .switch-input:checked + .switch-track {
-      background: var(--primary);
-    }
-
-    .switch-input:checked + .switch-track .switch-knob {
-      transform: translateX(18px);
-    }
-
-    .switch-input:focus-visible + .switch-track {
-      outline: 3px solid var(--focus);
-      outline-offset: 2px;
-    }
-
-    /* B: total-first ink header */
-    .calculator[data-design="b"] {
-      --primary: #d0a43d;
-      --primary-strong: #9d741b;
-      --accent: #f5efd9;
-      --canvas: #f5f5f2;
-      --surface: #ffffff;
-      --field: #f7f8f7;
-      --text: #202725;
-      --subtext: #69736f;
-      --line: #d7dcda;
-      --soft-line: #e9ecea;
-      --result-bg: #202725;
-      --result-text: #f8faf9;
-      --focus: rgba(208, 164, 61, 0.24);
-    }
-
-    .calculator[data-design="b"] .app-header {
-      margin-bottom: 0;
-      padding: 16px 17px 9px;
-      border-radius: 8px 8px 0 0;
-      background: #202725;
-    }
-
-    .calculator[data-design="b"] .brand-title,
-    .calculator[data-design="b"] .brand-copy {
-      color: #f8faf9;
-    }
-
-    .calculator[data-design="b"] .brand-copy {
-      color: #b9c2be;
-    }
-
-    .calculator[data-design="b"] .currency-trigger {
-      border-color: #59635f;
-      background: #2b3431;
-      color: #f8faf9;
-    }
-
-    .calculator[data-design="b"] .result-section {
-      margin-bottom: 14px;
-      padding-top: 11px;
-      border: 0;
-      border-left: 0;
-      border-radius: 0 0 8px 8px;
-    }
-
-    .calculator[data-design="b"] .result-section .eyebrow,
-    .calculator[data-design="b"] .result-section .rate-note,
-    .calculator[data-design="b"] .result-section .result-line {
-      color: #b9c2be;
-    }
-
-    .calculator[data-design="b"] .result-section .result-line {
-      border-bottom-color: #39423f;
-    }
-
-    .calculator[data-design="b"] .result-section .result-line strong {
-      color: #f8faf9;
-    }
-
-    .calculator[data-design="b"] .total-value {
-      color: #ffffff;
-    }
-
-    .calculator[data-design="b"] .input-section,
-    .calculator[data-design="b"] .tax-section {
-      border-right: 0;
-      border-left: 0;
-      border-radius: 0;
-      background: transparent;
-    }
-
-    .calculator[data-design="b"] .input-section {
-      border-top: 0;
-    }
-
-    /* C: wide ledger */
-    .calculator[data-design="c"] {
-      --primary: #8b3e49;
-      --primary-strong: #6f2e38;
-      --accent: #f5e9eb;
-      --canvas: #f3f4f6;
-      --surface: #ffffff;
-      --field: #ffffff;
-      --text: #222630;
-      --subtext: #6a6f7a;
-      --line: #d9dce3;
-      --soft-line: #eceef2;
-      --result-bg: #8b3e49;
-      --result-text: #ffffff;
-      --focus: rgba(139, 62, 73, 0.2);
-      width: min(100%, 720px);
-      display: grid;
-      grid-template-columns: minmax(0, 0.88fr) minmax(0, 1.12fr);
-      gap: 10px;
-    }
-
-    .calculator[data-design="c"] .app-header {
-      grid-column: 1 / -1;
-      margin-bottom: 2px;
-      padding-bottom: 11px;
-      border-bottom: 1px solid var(--line);
-    }
-
-    .calculator[data-design="c"] .result-section {
-      grid-column: 1;
-      grid-row: 2;
-      align-self: start;
-      margin: 0;
-      border: 0;
-      border-left: 0;
-      background: var(--result-bg);
-    }
-
-    .calculator[data-design="c"] .result-section .eyebrow,
-    .calculator[data-design="c"] .result-section .rate-note,
-    .calculator[data-design="c"] .result-section .result-line {
-      color: #f1dfe2;
-    }
-
-    .calculator[data-design="c"] .result-section .result-line {
-      border-bottom-color: rgba(255, 255, 255, 0.2);
-    }
-
-    .calculator[data-design="c"] .result-section .result-line strong {
-      color: #ffffff;
-    }
-
-    .calculator[data-design="c"] .input-section {
-      grid-column: 2;
-      grid-row: 2;
-      margin: 0;
-    }
-
-    .calculator[data-design="c"] .tax-section {
-      grid-column: 1 / -1;
-      margin: 0;
-    }
-
-    .calculator[data-design="c"] .tax-lines {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 0;
-    }
-
-    .calculator[data-design="c"] .tax-line {
-      min-width: 0;
-      flex-direction: column;
-      align-items: flex-start;
-      justify-content: center;
-      padding: 4px 14px;
-      border-right: 1px solid var(--soft-line);
-      border-bottom: 0;
-    }
-
-    .calculator[data-design="c"] .tax-line:first-child {
-      padding-left: 0;
-    }
-
-    .calculator[data-design="c"] .tax-line:last-child {
-      padding-right: 0;
-      border-right: 0;
-    }
-
-    .calculator[data-design="c"] .tax-line strong {
-      margin-top: 4px;
-      text-align: left;
-    }
-
-    /* D: thermal paper receipt */
-    body[data-design="d"] {
-      background: #e4e6e3;
-    }
-
-    .calculator[data-design="d"] {
-      --primary: #1d2522;
-      --primary-strong: #111714;
-      --accent: #eceee9;
-      --surface: #fffefa;
-      --field: #f3f2eb;
-      --text: #171b19;
-      --subtext: #5f6561;
-      --line: #9ea49f;
-      --soft-line: #c9cdc9;
-      --result-bg: #fffefa;
-      --result-text: #171b19;
-      --focus: rgba(29, 37, 34, 0.18);
-      width: min(100%, 390px);
-      padding-bottom: 18px;
-      border-top: 2px dashed #8e948f;
-      border-bottom: 2px dashed #8e948f;
-      background: var(--surface);
-      box-shadow: 0 18px 34px rgba(30, 37, 34, 0.14);
-    }
-
-    .calculator[data-design="d"] .app-header {
-      margin: 0;
-      padding: 23px 18px 15px;
-      border-bottom: 1px dashed var(--line);
-    }
-
-    .calculator[data-design="d"] .brand-title {
-      font-size: 21px;
-      font-weight: 720;
-    }
-
-    .calculator[data-design="d"] .brand-copy {
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size: 10px;
-    }
-
-    .calculator[data-design="d"] .currency-trigger {
-      min-width: 72px;
-      min-height: 38px;
-      border-style: dashed;
-      background: transparent;
-      box-shadow: none;
-    }
-
-    .calculator[data-design="d"] .result-section,
-    .calculator[data-design="d"] .input-section,
-    .calculator[data-design="d"] .tax-section {
-      margin: 0 18px;
-      padding: 17px 0;
-      border: 0;
-      border-bottom: 1px dashed var(--line);
-      border-radius: 0;
-      background: transparent;
-    }
-
-    .calculator[data-design="d"] .tax-section {
-      border-bottom: 0;
-    }
-
-    .calculator[data-design="d"] .total-value,
-    .calculator[data-design="d"] .result-line strong,
-    .calculator[data-design="d"] .tax-line strong,
-    .calculator[data-design="d"] .field-shell {
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-variant-numeric: tabular-nums;
-    }
-
-    .calculator[data-design="d"] .total-value {
-      min-height: 47px;
-      font-size: 37px;
-      font-weight: 800;
-      text-align: right;
-    }
-
-    .calculator[data-design="d"] .result-line,
-    .calculator[data-design="d"] .tax-line {
-      border-bottom-style: dotted;
-    }
-
-    .calculator[data-design="d"] .mode-control {
-      border-top: 1px dashed var(--line);
-      border-bottom-style: dashed;
-    }
-
-    .calculator[data-design="d"] .mode-option input:checked + .mode-label {
-      border-bottom-color: var(--text);
-      color: var(--text);
-    }
-
-    .calculator[data-design="d"] .field-grid {
-      gap: 12px 10px;
-    }
-
-    .calculator[data-design="d"] .field-label {
-      color: var(--text);
-      font-weight: 700;
-    }
-
-    .calculator[data-design="d"] .field-shell {
-      min-height: 46px;
-      padding: 0 10px;
-      border: 1px solid #858b86;
-      border-radius: 4px;
-      background: var(--field);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
-    }
-
-    .calculator[data-design="d"] .field-shell:focus-within {
-      border-color: var(--text);
-      box-shadow: 0 0 0 2px var(--focus);
-    }
-
-    .calculator[data-design="d"] .field-row.wide {
-      margin-top: 2px;
-      padding-top: 11px;
-      border-top: 1px dotted var(--soft-line);
-    }
-
-    .calculator[data-design="d"] .toggle-row {
-      border-style: dashed;
-      border-radius: 0;
-      background: transparent;
-    }
-
-    /* E: card approval slip */
-    body[data-design="e"] {
-      background: #ececeb;
-    }
-
-    .calculator[data-design="e"] {
-      --primary: #a83d36;
-      --primary-strong: #7f2b26;
-      --accent: #f4e9e7;
-      --surface: #ffffff;
-      --field: #ffffff;
-      --text: #222221;
-      --subtext: #666461;
-      --line: #aaa7a2;
-      --soft-line: #d8d5d1;
-      --result-bg: #ffffff;
-      --result-text: #222221;
-      --focus: rgba(168, 61, 54, 0.2);
-      width: min(100%, 400px);
-      border: 1px solid #77746f;
-      background: var(--surface);
-      box-shadow: 0 14px 28px rgba(39, 37, 34, 0.12);
-    }
-
-    .calculator[data-design="e"] .app-header {
-      margin: 0;
-      padding: 15px 16px;
-      background: #242321;
-    }
-
-    .calculator[data-design="e"] .brand-title {
-      color: #ffffff;
-      font-size: 20px;
-      font-weight: 700;
-    }
-
-    .calculator[data-design="e"] .brand-copy {
-      color: #c9c5bf;
-      font-size: 10px;
-    }
-
-    .calculator[data-design="e"] .currency-trigger {
-      min-width: 72px;
-      min-height: 38px;
-      border-color: #66625d;
-      background: #302f2c;
-      color: #ffffff;
-    }
-
-    .calculator[data-design="e"] .result-section {
-      margin: 16px 16px 0;
-      padding: 14px 0;
-      border: 0;
-      border-top: 4px double var(--text);
-      border-bottom: 4px double var(--text);
-      border-radius: 0;
-    }
-
-    .calculator[data-design="e"] .total-value {
-      min-height: 46px;
-      color: var(--primary-strong);
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size: 38px;
-      font-weight: 800;
-      font-variant-numeric: tabular-nums;
-      text-align: right;
-    }
-
-    .calculator[data-design="e"] .result-line strong,
-    .calculator[data-design="e"] .tax-line strong,
-    .calculator[data-design="e"] .field-shell {
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-variant-numeric: tabular-nums;
-    }
-
-    .calculator[data-design="e"] .input-section,
-    .calculator[data-design="e"] .tax-section {
-      margin: 0 16px;
-      padding: 16px 0;
-      border: 0;
-      border-bottom: 1px dotted var(--line);
-      border-radius: 0;
-    }
-
-    .calculator[data-design="e"] .tax-section {
-      border-bottom: 0;
-    }
-
-    .calculator[data-design="e"] .mode-control {
-      border: 1px solid var(--text);
-    }
-
-    .calculator[data-design="e"] .mode-label {
-      border-bottom: 0;
-    }
-
-    .calculator[data-design="e"] .mode-option:first-child .mode-label {
-      border-right: 1px solid var(--text);
-    }
-
-    .calculator[data-design="e"] .mode-option input:checked + .mode-label {
-      border-bottom: 0;
-      background: var(--text);
-      color: #ffffff;
-    }
-
-    .calculator[data-design="e"] .field-shell {
-      border-style: dashed;
-      border-radius: 0;
-    }
-
-    .calculator[data-design="e"] .toggle-row {
-      border-style: dashed;
-      border-radius: 0;
-    }
-
-    @media (max-width: 620px) {
-      .calculator[data-design="c"] {
-        width: min(100%, 430px);
-        display: block;
-      }
-
-      .calculator[data-design="c"] .app-header {
-        margin-bottom: 12px;
-      }
-
-      .calculator[data-design="c"] .result-section,
-      .calculator[data-design="c"] .input-section,
-      .calculator[data-design="c"] .tax-section {
-        margin-bottom: 10px;
-      }
-
-      .calculator[data-design="c"] .tax-lines {
-        display: block;
-      }
-
-      .calculator[data-design="c"] .tax-line {
-        flex-direction: row;
-        align-items: center;
-        justify-content: space-between;
-        padding: 9px 0;
-        border-right: 0;
-        border-bottom: 1px solid var(--soft-line);
-      }
-
-      .calculator[data-design="c"] .tax-line:last-child {
-        border-bottom: 0;
-      }
-
-      .calculator[data-design="c"] .tax-line strong {
-        margin-top: 0;
-        text-align: right;
-      }
-    }
-
-    @media (max-width: 380px) {
-      body {
-        padding-right: 10px;
-        padding-left: 10px;
-      }
-
-      .brand-title {
-        font-size: 21px;
-      }
-
-      .brand-copy {
-        font-size: 12px;
-      }
-
-      .currency-trigger {
-        min-width: 75px;
-      }
-
-      .total-value {
-        font-size: 36px;
-      }
-
-      .field-grid {
-        grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
-        gap: 8px;
-      }
-
-      .field-shell {
-        padding: 0 10px;
-      }
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: var(--mode-bg);
+    }
+
+    .mode-option { position: relative; min-width: 0; }
+    .mode-option input, .switch-input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+    .mode-label { display: flex; min-height: 44px; align-items: center; justify-content: center; gap: 7px; border-radius: 4px; color: var(--subtext); font-size: 14px; font-weight: 400; }
+    .mode-label .icon { width: 16px; height: 16px; }
+    .mode-option input:checked + .mode-label { background: var(--surface); color: var(--text); font-weight: 500; box-shadow: 0 1px 3px rgba(20, 30, 20, 0.1); }
+    .mode-option input:focus-visible + .mode-label { outline: 2px solid var(--primary); outline-offset: 1px; }
+
+    .field-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 15px 12px; align-items: end; }
+    .field-row { min-width: 0; }
+    .field-row.wide { grid-column: 1 / -1; }
+    .field-label { display: block; margin-bottom: 7px; color: var(--text); font-size: 13px; font-weight: 400; line-height: 1.4; overflow-wrap: anywhere; }
+    .field-label small { color: var(--subtext); font-size: 12px; white-space: nowrap; }
+    .field-shell { display: flex; min-height: 56px; align-items: center; gap: 7px; padding: 0 12px; border: 1px solid var(--field-line); border-radius: 7px; background: var(--field); }
+    .field-shell:focus-within { border-color: var(--primary); box-shadow: 0 0 0 2px var(--focus); }
+    .field-shell input { width: 100%; min-width: 0; height: 46px; padding: 0; border: 0; outline: 0; background: transparent; color: var(--text); font-size: 21px; font-weight: 500; font-variant-numeric: tabular-nums; }
+    .field-shell input::placeholder { color: var(--subtext); font-size: 13px; font-weight: 400; opacity: 0.85; }
+    .field-prefix, .field-suffix { flex: 0 0 auto; color: var(--subtext); font-size: 16px; font-weight: 400; white-space: nowrap; }
+    .field-suffix { margin-left: auto; }
+    .weight-input { appearance: textfield; -moz-appearance: textfield; }
+    .weight-input::-webkit-inner-spin-button, .weight-input::-webkit-outer-spin-button { margin: 0; appearance: none; -webkit-appearance: none; }
+    .shipping-note { display: none; margin-top: 7px; color: var(--subtext); font-size: 12px; line-height: 1.5; }
+    .shipping-note.show { display: block; }
+
+    .toggle-row { position: relative; display: flex; min-height: 58px; align-items: center; justify-content: space-between; gap: 12px; margin-top: 12px; color: var(--text); font-size: 14px; }
+    .switch-track { display: block; flex: 0 0 auto; width: 44px; height: 26px; padding: 3px; border-radius: 20px; background: var(--switch-bg); transition: background-color 0.15s; }
+    .switch-knob { display: block; width: 20px; height: 20px; border-radius: 50%; background: var(--switch-knob); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08); transition: transform 0.15s; }
+    .switch-input:checked + .switch-track { background: var(--primary); }
+    .switch-input:checked + .switch-track .switch-knob { transform: translateX(18px); }
+    .switch-input:focus-visible + .switch-track { outline: 2px solid var(--primary); outline-offset: 3px; }
+
+    .rates-footer { display: flex; align-items: flex-start; gap: 8px; margin: 4px 4px 0; padding-top: 13px; border-top: 1px solid var(--line); color: var(--subtext); }
+    .rates-footer .icon { width: 14px; height: 14px; margin-top: 2px; }
+    .rate-note { color: var(--subtext); font-size: 12px; font-weight: 400; line-height: 1.5; overflow-wrap: anywhere; }
+    .rate-note.warning { color: var(--warning); }
+
+    @media (max-width: 374px) {
+      body { padding-inline: 12px; }
+      .app-header { gap: 8px; }
+      .brand { gap: 6px; }
+      .brand-title { font-size: 17px; }
+      .brand-icon { width: 18px; height: 18px; }
+      .currency-trigger { min-width: 68px; padding-inline: 7px; font-size: 13px; }
+      .result-section { padding-inline: 17px; }
+      .total-value { font-size: 38px; }
+      .field-grid { column-gap: 9px; }
+      .field-label { font-size: 12px; }
+      .field-label small { font-size: 11px; }
+      .field-shell { padding-inline: 10px; }
+      .field-shell input { font-size: 19px; }
+    }
+
+    @media (min-width: 800px) {
+      body { padding: 32px 24px 48px; }
+      .calculator { width: min(100%, 940px); }
+      .app-header { padding: 0 0 24px; }
+      .calculator-content { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 30px; }
+      .input-section { padding: 0; }
+      .rates-footer { margin: 22px 0 0; }
     }
 
     @media (prefers-color-scheme: dark) {
-      body {
-        background: #101412;
-        color: #edf2ef;
+      :root {
+        color-scheme: dark;
+        --canvas: #141815;
+        --surface: #202622;
+        --field: #282f29;
+        --text: #f2f5f1;
+        --subtext: #b3c0b5;
+        --line: #414d43;
+        --field-line: #647365;
+        --primary: #a1d2b2;
+        --accent: #354a39;
+        --mode-bg: #2f3930;
+        --focus: rgba(161, 210, 178, 0.18);
+        --switch-bg: #59665b;
+        --switch-knob: #eff6ef;
+        --warning: #e8bf8b;
+        --paper-shadow: 0 5px 14px rgba(0, 0, 0, 0.12);
+        --menu-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
       }
+    }
 
-      .sample-picker {
-        border-bottom-color: #34413d;
-        background: rgba(16, 20, 18, 0.96);
-      }
-
-      .sample-tab {
-        color: #8f9d98;
-      }
-
-      .sample-tab[aria-selected="true"] {
-        border-bottom-color: #65c6b6;
-        color: #edf2ef;
-      }
-
-      .calculator {
-        --primary: #65c6b6;
-        --primary-strong: #9bdfd3;
-        --accent: #19312c;
-        --surface: #161d1a;
-        --field: #111714;
-        --text: #edf2ef;
-        --subtext: #9ba9a4;
-        --line: #34413d;
-        --soft-line: #29332f;
-        --result-bg: #161d1a;
-        --result-text: #edf2ef;
-        --focus: rgba(101, 198, 182, 0.22);
-      }
-
-      .currency-menu {
-        box-shadow: 0 18px 38px rgba(0, 0, 0, 0.4);
-      }
-
-      .field-shell input::placeholder {
-        color: #71807a;
-      }
-
-      .rate-note.warning {
-        color: #f2c96d;
-      }
-
-      .switch-track {
-        background: #42504b;
-      }
-
-      .calculator[data-design="b"] {
-        --primary: #e0b74f;
-        --primary-strong: #f0d27f;
-        --accent: #3a321e;
-        --surface: #171c1a;
-        --field: #101513;
-        --text: #f1f3f2;
-        --subtext: #a4adaa;
-        --line: #3a423f;
-        --soft-line: #2c3330;
-        --result-bg: #202725;
-        --result-text: #ffffff;
-        --focus: rgba(224, 183, 79, 0.24);
-      }
-
-      .calculator[data-design="b"] .app-header,
-      .calculator[data-design="b"] .result-section {
-        background: #202725;
-      }
-
-      .calculator[data-design="b"] .input-section,
-      .calculator[data-design="b"] .tax-section {
-        background: transparent;
-      }
-
-      .calculator[data-design="c"] {
-        --primary: #d77886;
-        --primary-strong: #efa2ad;
-        --accent: #3b2228;
-        --surface: #19191d;
-        --field: #111216;
-        --text: #f2eff0;
-        --subtext: #aaa4a7;
-        --line: #3d383c;
-        --soft-line: #302c2f;
-        --result-bg: #712f39;
-        --result-text: #ffffff;
-        --focus: rgba(215, 120, 134, 0.22);
-      }
-
-      body[data-design="d"],
-      body[data-design="e"] {
-        background: #101311;
-      }
-
-      .calculator[data-design="d"] {
-        --primary: #e2d4ad;
-        --primary-strong: #f2e8cb;
-        --accent: #29271f;
-        --surface: #181713;
-        --field: #232119;
-        --text: #f0eadb;
-        --subtext: #aaa394;
-        --line: #666052;
-        --soft-line: #403c34;
-        --result-bg: #181713;
-        --result-text: #f0eadb;
-        --focus: rgba(226, 212, 173, 0.2);
-        border-top-color: #666052;
-        border-bottom-color: #666052;
-        box-shadow: 0 18px 36px rgba(0, 0, 0, 0.38);
-      }
-
-      .calculator[data-design="d"] .field-shell {
-        border-color: #777061;
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
-      }
-
-      .calculator[data-design="e"] {
-        --primary: #e07b72;
-        --primary-strong: #f19b93;
-        --accent: #382321;
-        --surface: #181817;
-        --field: #111110;
-        --text: #f1efec;
-        --subtext: #aaa6a0;
-        --line: #5a5651;
-        --soft-line: #373431;
-        --result-bg: #181817;
-        --result-text: #f1efec;
-        --focus: rgba(224, 123, 114, 0.22);
-        border-color: #5a5651;
-        box-shadow: 0 18px 36px rgba(0, 0, 0, 0.38);
-      }
-
-      .calculator[data-design="e"] .app-header {
-        background: #090909;
-      }
-
-      .calculator[data-design="e"] .mode-option input:checked + .mode-label {
-        background: #f1efec;
-        color: #171716;
-      }
+    @media (prefers-reduced-motion: reduce) {
+      .switch-track, .switch-knob { transition: none; }
     }
   </style>
 </head>
-<body data-design="d">
-  <main class="calculator" id="calculator" data-design="d">
+<body data-design="clean-ticket">
+  <main class="calculator" id="calculator" data-design="clean-ticket">
     <header class="app-header">
-      <div>
+      <div class="brand">
+        <!--
+          Lucide icons v0.468.0, ISC License.
+          Copyright (c) for portions of Lucide are held by Cole Bemis 2013-2022
+          as part of Feather (MIT). All other copyright (c) for Lucide are held
+          by Lucide Contributors 2022.
+          Permission to use, copy, modify, and/or distribute this software for
+          any purpose with or without fee is hereby granted, provided that the
+          above copyright notice and this permission notice appear in all copies.
+          THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+          WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+          MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE
+          FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY
+          DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER
+          IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING
+          OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+        -->
+        <svg class="icon brand-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z" />
+          <path d="M14 8H8" /><path d="M16 12H8" /><path d="M13 16H8" />
+        </svg>
         <h1 class="brand-title">시가 세금 계산기</h1>
-        <p class="brand-copy">상품가와 배송비를 합친 예상 결제금액</p>
       </div>
       <div class="currency-control">
-        <button type="button" class="currency-trigger" id="currencyTrigger" aria-haspopup="listbox" aria-expanded="false" aria-controls="currencyMenu">
+        <button type="button" class="currency-trigger" id="currencyTrigger" aria-label="통화 선택" aria-haspopup="listbox" aria-expanded="false" aria-controls="currencyMenu">
           <span id="currencyCode">USD</span>
           <span class="currency-arrow" aria-hidden="true"></span>
         </button>
-        <div class="currency-menu" id="currencyMenu" role="listbox" hidden></div>
+        <div class="currency-menu" id="currencyMenu" role="listbox" aria-label="결제 통화" hidden></div>
       </div>
     </header>
 
-    <section class="result-section" aria-live="polite">
-      <div class="result-head">
+    <div class="calculator-content">
+      <section class="result-section" aria-label="예상 결제 명세">
         <p class="eyebrow">총 예상 결제금액</p>
-        <span class="rate-note" id="rateNote">환율 확인 중</span>
-      </div>
-      <output class="total-value" id="finalTotal">계산 전</output>
-      <div class="result-lines">
-        <div class="result-line">
-          <span>상품 결제금액</span>
-          <strong id="purchaseTotal">-</strong>
+        <output class="total-value" id="finalTotal" aria-live="polite">계산 전</output>
+        <div class="result-lines">
+          <div class="result-line">
+            <span>상품 결제금액</span>
+            <strong id="purchaseTotal">-</strong>
+          </div>
+          <div class="result-line">
+            <span>예상 세금</span>
+            <strong id="taxTotal">-</strong>
+          </div>
+          <div class="result-line">
+            <span id="shippingResultLabel">한국 직배송금액</span>
+            <strong id="shippingPurchaseTotal">-</strong>
+          </div>
         </div>
-        <div class="result-line">
-          <span>예상 세금</span>
-          <strong id="taxTotal">-</strong>
-        </div>
-        <div class="result-line">
-          <span id="shippingResultLabel">한국 직배송금액</span>
-          <strong id="shippingPurchaseTotal">-</strong>
-        </div>
-      </div>
-    </section>
+        <details class="tax-section">
+          <summary class="tax-summary">
+            <h2 class="section-title">세금 상세</h2>
+            <span class="currency-arrow" aria-hidden="true"></span>
+          </summary>
+          <div class="tax-lines">
+            <div class="tax-line">
+              <span>관세/부가세 합계</span>
+              <strong id="dutyVatTotal">-</strong>
+            </div>
+            <div class="tax-line">
+              <span>담배소비세 + 지방교육세</span>
+              <strong id="localTaxTotal">-</strong>
+            </div>
+            <div class="tax-line">
+              <span>개별소비세</span>
+              <strong id="individualTaxTotal">-</strong>
+            </div>
+          </div>
+        </details>
+      </section>
 
-    <section class="input-section">
-      <div class="section-heading">
-        <h2 class="section-title">입력</h2>
-        <span class="threshold-note" id="thresholdNote" hidden></span>
-      </div>
-      <div class="mode-control" role="radiogroup" aria-label="구매 방식">
-        <label class="mode-option" for="directMode">
-          <input type="radio" name="purchaseMode" id="directMode" value="direct" checked>
-          <span class="mode-label">직배</span>
+      <section class="input-section" aria-label="구매 정보 입력">
+        <div class="section-heading">
+          <h2 class="section-title">구매 정보</h2>
+          <span class="threshold-note" id="thresholdNote" hidden></span>
+        </div>
+        <div class="mode-control" role="radiogroup" aria-label="구매 방식">
+          <label class="mode-option" for="directMode">
+            <input type="radio" name="purchaseMode" id="directMode" value="direct" checked>
+            <span class="mode-label">
+              <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z" />
+                <path d="M12 22V12" /><path d="m3.3 7 7.703 4.734a2 2 0 0 0 1.994 0L20.7 7" /><path d="m7.5 4.27 9 5.15" />
+              </svg>
+              직배
+            </span>
+          </label>
+          <label class="mode-option" for="forwarderMode">
+            <input type="radio" name="purchaseMode" id="forwarderMode" value="forwarder">
+            <span class="mode-label">
+              <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2" /><path d="M15 18H9" />
+                <path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14" />
+                <circle cx="17" cy="18" r="2" /><circle cx="7" cy="18" r="2" />
+              </svg>
+              배대지
+            </span>
+          </label>
+        </div>
+
+        <div class="field-grid">
+          <div class="field-row">
+            <label class="field-label" for="goodsAmount" id="goodsLabel">상품가 (USD)</label>
+            <div class="field-shell">
+              <span class="field-prefix currency-symbol">$</span>
+              <input type="text" inputmode="decimal" id="goodsAmount" placeholder="금액 입력" aria-label="상품가">
+            </div>
+          </div>
+
+          <div class="field-row">
+            <label class="field-label" for="weight">총 중량 <small>시가 무게</small></label>
+            <div class="field-shell">
+              <input class="weight-input" type="number" inputmode="decimal" min="0" step="0.1" id="weight" value="150" aria-label="총 중량 (시가 무게)">
+              <span class="field-suffix">g</span>
+            </div>
+          </div>
+
+          <div class="field-row wide">
+            <label class="field-label" for="shippingAmount" id="shippingLabel">한국 직배송비 (USD)</label>
+            <div class="field-shell">
+              <span class="field-prefix currency-symbol">$</span>
+              <input type="text" inputmode="decimal" id="shippingAmount" placeholder="없으면 비워두기" aria-label="한국 직배송비">
+            </div>
+            <p class="shipping-note" id="shippingNote">시가 무게만 반영한 미국 배대지 일반요금 예상값</p>
+          </div>
+        </div>
+
+        <label class="toggle-row" for="over50">
+          <span>50스틱 초과</span>
+          <input class="switch-input" type="checkbox" id="over50" role="switch">
+          <span class="switch-track" aria-hidden="true"><span class="switch-knob"></span></span>
         </label>
-        <label class="mode-option" for="forwarderMode">
-          <input type="radio" name="purchaseMode" id="forwarderMode" value="forwarder">
-          <span class="mode-label">배대지</span>
-        </label>
-      </div>
+      </section>
+    </div>
 
-      <div class="field-grid">
-        <div class="field-row">
-          <label class="field-label" for="weight">총 중량 (시가 무게)</label>
-          <div class="field-shell">
-            <input class="weight-input" type="number" inputmode="decimal" min="0" step="0.1" id="weight" value="150" aria-label="총 중량 (시가 무게)">
-            <span class="field-suffix">g</span>
-          </div>
-        </div>
-
-        <div class="field-row">
-          <label class="field-label" for="goodsAmount" id="goodsLabel">상품가 (USD)</label>
-          <div class="field-shell">
-            <span class="field-prefix currency-symbol">$</span>
-            <input type="text" inputmode="decimal" id="goodsAmount" placeholder="금액 입력" aria-label="상품가">
-          </div>
-        </div>
-
-        <div class="field-row wide">
-          <label class="field-label" for="shippingAmount" id="shippingLabel">한국 직배송비 (USD)</label>
-          <div class="field-shell">
-            <span class="field-prefix currency-symbol">$</span>
-            <input type="text" inputmode="decimal" id="shippingAmount" placeholder="없으면 비워두기" aria-label="한국 직배송비">
-          </div>
-          <p class="shipping-note" id="shippingNote">시가 무게만 반영한 미국 배대지 일반요금 예상값</p>
-        </div>
-      </div>
-
-      <label class="toggle-row" for="over50">
-        <span>50스틱 초과</span>
-        <input class="switch-input" type="checkbox" id="over50">
-        <span class="switch-track" aria-hidden="true"><span class="switch-knob"></span></span>
-      </label>
-    </section>
-
-    <section class="tax-section">
-      <h2 class="section-title">세금 상세</h2>
-      <div class="tax-lines">
-        <div class="tax-line">
-          <span>관세/부가세 합계</span>
-          <strong id="dutyVatTotal">-</strong>
-        </div>
-        <div class="tax-line">
-          <span>담배소비세 + 지방교육세</span>
-          <strong id="localTaxTotal">-</strong>
-        </div>
-        <div class="tax-line">
-          <span>개별소비세</span>
-          <strong id="individualTaxTotal">-</strong>
-        </div>
-      </div>
-    </section>
+    <footer class="rates-footer" aria-live="polite">
+      <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M8 3 4 7l4 4" /><path d="M4 7h16" /><path d="m16 21 4-4-4-4" /><path d="M20 17H4" />
+      </svg>
+      <span class="rate-note" id="rateNote">환율 확인 중</span>
+    </footer>
   </main>
 
   <script src="./tax-policy.js"></script>
@@ -1609,6 +791,34 @@
     function setText(id, value) {
       document.getElementById(id).textContent = value;
     }
+  </script>
+  <script>
+    (() => {
+      const total = document.getElementById('finalTotal');
+      function fitTotal() {
+        total.style.fontSize = '';
+        const range = document.createRange();
+        range.selectNodeContents(total);
+        const textWidth = range.getBoundingClientRect().width;
+        if (textWidth > total.clientWidth) {
+          const baseSize = Number.parseFloat(getComputedStyle(total).fontSize);
+          total.style.fontSize = `${Math.max(18, Math.floor(baseSize * total.clientWidth / textWidth))}px`;
+        }
+      }
+      function renderTotal() {
+        const amount = total.textContent.match(/^(.*)(원)$/);
+        if (amount && !total.querySelector('.total-unit')) {
+          const unit = document.createElement('span');
+          unit.className = 'total-unit';
+          unit.textContent = amount[2];
+          total.replaceChildren(document.createTextNode(amount[1]), unit);
+        }
+        fitTotal();
+      }
+      new MutationObserver(renderTotal).observe(total, { childList: true, characterData: true, subtree: true });
+      new ResizeObserver(fitTotal).observe(total);
+      document.fonts.ready.then(fitTotal);
+    })();
   </script>
 </body>
 </html>

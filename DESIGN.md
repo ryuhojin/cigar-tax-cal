@@ -2,7 +2,7 @@
 
 ## Source of truth
 - Status: Implemented
-- Last refreshed: 2026-08-12
+- Last refreshed: 2026-10-15
 - Primary product surfaces: Static cigar import tax calculator in `index.html`
 - Evidence reviewed: `index.html`, `wireframes.html`
 
@@ -24,7 +24,7 @@
 ## Information architecture
 - Primary navigation: none
 - Core routes/screens: single calculator screen
-- Content hierarchy: purchase mode, inputs, total expected payment, threshold basis, tax breakdown
+- Content hierarchy: total expected payment and payment breakdown, expandable tax detail, purchase mode and inputs, exchange-rate status
 
 ## Design principles
 - Principle 1: Separate inputs only where they materially change the 150 USD threshold or taxable value
@@ -33,16 +33,16 @@
 - Tradeoffs: extra shipping fields add friction but avoid overstating the 150 USD threshold when Korea-bound shipping is separable
 
 ## Visual language
-- Color: thermal-paper ivory, graphite ink, and restrained neutral grays
-- Typography: dense mobile-readable Korean labels
+- Color: white receipt paper, soft gray-green canvas, dark ink, and restrained green accents
+- Typography: Pretendard, 400/500 weights, readable labels and tabular monetary values
 - Spacing/layout rhythm: two-column desktop, stacked mobile
-- Shape/radius/elevation: receipt-like dashed rules, square input fields, and one restrained paper shadow
+- Shape/radius/elevation: dashed rules, a serrated receipt edge, 7px input corners, and one restrained paper shadow
 - Motion: none beyond button hover
 - Dark mode: supported through `prefers-color-scheme: dark`; preserve the same hierarchy with dark ink surfaces and muted teal accents
 - Imagery/iconography: none required
 
 ## Components
-- Existing components to reuse: finance panel, input panel, result panel, action buttons
+- Existing components to reuse: currency menu, mode selector, inputs, payment breakdown, tax detail, and exchange-rate status
 - New/changed components: direct/forwarding mode selector, goods/local-cost amount field, Korea-bound shipping field with a weight-based US forwarding estimate
 - Variants and states: loading exchange rates, invalid numeric input, result visible
 - Token/component ownership: single-file CSS variables in `index.html`
@@ -56,15 +56,14 @@
 
 ## Responsive behavior
 - Supported breakpoints/devices: mobile phones and narrow desktop
-- Layout adaptations: input grid becomes one column below 480px
+- Layout adaptations: product price and cigar weight stay side by side on mobile; shipping spans both columns; receipt and inputs form two columns from 800px
 - Touch/hover differences: large touch targets, hover only decorative
 
 ## Interaction states
-- Loading: exchange rate cards show loading text
-- Empty: result panel hidden until calculation
-- Error: invalid numeric input message
-- Success: result panel displays separated taxes
-- Disabled: share button disables during capture
+- Loading: footer displays exchange-rate loading text
+- Empty: receipt displays the pre-calculation state
+- Error: existing validation clears the monetary values
+- Success: receipt displays product payment, taxes, and shipping; detailed tax lines expand on request
 - Offline/slow network: exchange rate failure message
 
 ## Content voice
@@ -80,6 +79,6 @@
 - Test/screenshot expectations: static HTTP preview and calculation smoke checks
 
 ## Selected Layout
-- D, thermal receipt:
-  `[Header/currency] -> [Primary total] -> [Purchase mode and inputs] -> [Tax detail]`
-- HTML preview: `ui-samples-v2.html#d`
+- Clean Ticket, selected by the user:
+  `[Header/currency] -> [Receipt: primary total, payment breakdown, expandable taxes] -> [Purchase mode and inputs] -> [Exchange-rate status]`
+- Production source: `index.html`
