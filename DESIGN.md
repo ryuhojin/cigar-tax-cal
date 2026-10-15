@@ -57,6 +57,7 @@
 ## Responsive behavior
 - Supported breakpoints/devices: mobile phones and narrow desktop
 - Layout adaptations: product price and cigar weight stay side by side on mobile; shipping spans both columns; receipt and inputs form two columns from 800px
+- Mobile density: reduce vertical spacing on phones, with tighter spacing below 700px and 650px usable height; preserve font sizes and at least 44px primary touch targets
 - Touch/hover differences: large touch targets, hover only decorative
 
 ## Interaction states
