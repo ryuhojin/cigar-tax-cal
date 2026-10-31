@@ -2,17 +2,17 @@
   "source": "Korea Customs Service weekly import exchange rates",
   "sourceUrl": "https://www.data.go.kr/data/15101230/openapi.do",
   "rateType": "import",
-  "weekStart": "2026-10-25",
-  "weekEnd": "2026-10-31",
-  "generatedAt": "2026-10-24T18:48:16.101Z",
+  "weekStart": "2026-11-01",
+  "weekEnd": "2026-11-07",
+  "generatedAt": "2026-10-31T19:59:56.150Z",
   "rates": {
-    "USD": 1330.52,
-    "EUR": 1492.96,
-    "CHF": 1614.15,
-    "HKD": 169.59,
-    "GBP": 1777.54,
-    "CNY": 199.26,
-    "JPY": 8.4277,
-    "AUD": 931.23
+    "USD": 1328.56,
+    "EUR": 1484,
+    "CHF": 1607.31,
+    "HKD": 169.36,
+    "GBP": 1772.94,
+    "CNY": 199.2,
+    "JPY": 8.4305,
+    "AUD": 933.66
   }
 }
